@@ -3,16 +3,30 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-permissions:
-  contents: read
 concurrency:
   group: pages
   cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+      - name: Import chapter-three game update
+        env:
+          ARCHIVE: ${{ runner.temp }}/emberspeaker-source.zip
+        run: |
+          curl --fail --location --retry 3 --output "$ARCHIVE" https://github.com/lyman86/emberspeaker-game/releases/download/v0.8.0/emberspeaker-update-v8.zip
+          echo "ec61ea463d4ea1c737f3fcb7ca7c79fc46e6b3010c0351ff395f847fd44137e5  $ARCHIVE" | sha256sum --check
+          unzip -oq "$ARCHIVE" -d .
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .
+          git commit -m 'Add Iron Crown campaign and tougher Plague King encounter'
+          git push origin HEAD:main
+          git tag --force v0.8.0 HEAD
+          git push --force origin refs/tags/v0.8.0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -27,6 +41,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
