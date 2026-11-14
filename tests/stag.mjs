@@ -23,11 +23,11 @@ assert(inSector(V(),V(0,1),V(0,5),6.5,Math.PI*.9));assert(!inSector(V(),V(0,1),V
 assert(inLane(V(),V(0,1),V(1,10),19,3.8));assert(!inLane(V(),V(0,1),V(2,10),19,3.8));
 // Captured telegraphs do not track a hero after warning. No damage before the cue fills.
 {const f=fixture();f.step(.85);assert.equal(f.hits.length,0);f.player.pos.set(0,0,-5);f.ally.pos.copy(f.player.pos);f.step(.65);assert.equal(f.hits.length,0);f.clear();}
-{const f=fixture();f.step(1.1);assert.equal(f.hits.filter(h=>!h.ally).length,1);assert.equal(f.hits[0].d,34);assert(f.hits.find(h=>h.ally).d<34);f.step(.4);assert.equal(f.hits.length,2);f.clear();}
+{const f=fixture();f.step(1.1);assert.equal(f.hits.filter(h=>!h.ally).length,1);assert.equal(f.hits[0].d,62);assert(f.hits.find(h=>h.ally).d<62);f.step(.4);assert.equal(f.hits.length,2);f.clear();}
 // Charge endpoint and hit lane share the collision-clipped length.
 {const f=fixture(1);f.g.level.displacement=(a,b)=>V(0,10);f.player.pos.set(0,0,17);f.ally.pos.copy(f.player.pos);f.step(1.7);assert.equal(f.e.stag.cast.length,10);assert(f.e.pos.z<=10);assert.equal(f.hits.length,0);f.clear();}
 // Phase-three wave is an isolated move; a timed invulnerable dash crosses it safely.
-{const f=fixture(3,3);f.player.pos.set(0,0,10);f.ally.pos.copy(f.player.pos);f.step(2.05);f.player.invuln=1;f.step(.3);f.player.invuln=0;f.step(.8);assert.equal(f.hits.filter(h=>!h.ally).length,0);assert(f.hits.some(h=>h.ally));assert.equal(f.e.stag.cast.kind,'nova');f.clear();}
+{const f=fixture(3,3);f.player.pos.set(0,0,10);f.ally.pos.copy(f.player.pos);f.step(.1);f.player.pos.set(10,0,0);f.ally.pos.copy(f.player.pos);f.step(1.95);f.player.invuln=1;f.step(.3);f.player.invuln=0;f.step(.8);assert.equal(f.hits.filter(h=>!h.ally).length,0);assert(f.hits.some(h=>h.ally));assert.equal(f.e.stag.cast.kind,'nova');f.clear();}
 // Root chant can be broken by saved control skills; it opens a real recovery window.
 {const f=fixture(0,2);f.step(.1);assert.equal(f.e.stag.cast.kind,'roots');stagPoise(f.e,.6);stagPoise(f.e,.6);assert.equal(f.e.stag.cast,null);assert(f.e.stag.exposed>0);f.step(2);assert.equal(f.hits.length,0);f.clear();}
 // Slow affects pursuit, never changes the warning / damage clock midway through a cast.

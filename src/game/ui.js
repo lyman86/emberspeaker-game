@@ -355,7 +355,7 @@ export class UI {
     this.el.bag.classList.remove('hidden');
     if(!S.querySelector('.workshop-button')){const b=h('button','workshop-button','强化装备 / 分解装备');b.onclick=()=>this.openGrowth('forge');S.querySelector('h3').after(b);}
     S.querySelector('.workshop-button').hidden=mode!=='smith';
-    S.querySelector('h3').textContent = mode === 'smith' ? '布拉姆的铁匠铺' : mode==='hunter'?'哈罗德的补给':'艾琳的药剂摊';
+    S.querySelector('h3').textContent = mode === 'smith' ? '布拉姆的铁匠铺' : mode==='quartermaster'?'艾达的军需站':mode==='hunter'?'哈罗德的补给':'艾琳的药剂摊';
     if (mode === 'smith' && (!this._stock || this._stockLvl !== pl.level || this._stockCls !== pl.cls)) { this._stock = shopStock(pl.cls, pl.level); this._stockLvl = pl.level; this._stockCls = pl.cls; }
     this.refreshShop();
     this.refreshBag();
@@ -365,7 +365,7 @@ export class UI {
   refreshShop() {
     const g = this.game, pl = g.player, S = this.el.shop, grid = S.querySelector('.grid');
     grid.innerHTML = '';
-    if (this.shopMode === 'apothecary'||this.shopMode==='hunter') {
+    if (this.shopMode === 'apothecary'||['hunter','quartermaster'].includes(this.shopMode)) {
       const potions = [['hp', '生命药水', 25, '回复 50% 生命'], ['mp', pl.C.res.name + '药水', 20, `回复 60% ${pl.C.res.name}`]];
       for (const [k, n, price, desc] of potions) {
         const d = h('div', 'ware', `<div class="ico">${potionIcon(k)}</div><div class="nm">${n}</div><div class="ds">${desc}</div><div class="pr">${price} 金币</div>`);
@@ -375,7 +375,7 @@ export class UI {
       const bundle = h('div', 'ware', `<div class="ico">${potionIcon('hp')}</div><div class="nm">药剂礼包</div><div class="ds">生命药水 ×4，${pl.C.res.name}药水 ×2</div><div class="pr">110 金币</div>`);
       bundle.onclick = () => { if (pl.gold < 110) return this._poor(); pl.gold -= 110; pl.potions.hp += 4; pl.potions.mp += 2; g.audio.play('coin'); this.toast('购买：药剂礼包'); g.save(); this.refreshBag(); };
       grid.appendChild(bundle);
-      if(this.shopMode==='hunter')for(const id of ['iron','soul']){
+      if(['hunter','quartermaster'].includes(this.shopMode))for(const id of ['iron','soul']){
         const m=MATERIALS[id],price=m.price*2,row=h('button','ware',`${m.name} · ${price} 金币`);
         row.onclick=()=>{if(pl.gold<price)return this._poor();pl.gold-=price;pl.addMaterial(id);this.refreshShop();this.refreshBag();};grid.appendChild(row);
       }
@@ -643,9 +643,9 @@ export class UI {
     this.el.ailment.hidden=!pl.plagueStacks;
     if (t) {
       this.el.bossDetails.hidden=!(t.T.boss||t.type==='butcher');
-      this.el.bossDetails.querySelector('.boss-phase').textContent=t.type==='stag'?`第 ${t.phase??1} 阶段 · ${Math.ceil(t.hp/t.maxHp*100)}%`:t.type==='butcher'?'精英 · 缝合躯体':'守钟者';
+      this.el.bossDetails.querySelector('.boss-phase').textContent=['stag','ironking'].includes(t.type)?`第 ${t.phase??1} 阶段 · ${Math.ceil(t.hp/t.maxHp*100)}%`:t.type==='blackknight'?'精英 · 黑铁盾势':t.type==='butcher'?'精英 · 缝合躯体':'守钟者';
       this.el.bossDetails.querySelector('.boss-intent').textContent=t.intent??(t.type==='boss'?'亡灵 · 弱圣光 / 抗暗影':t.type==='butcher'?'厚皮 · 物理与毒素抗性':'');
-      const poise=this.el.bossDetails.querySelector('.poise-track');poise.hidden=t.type!=='stag';poise.querySelector('i').style.width=((t.stag?.poise??0)*100)+'%';
+      const poise=this.el.bossDetails.querySelector('.poise-track');poise.hidden=!['stag','blackknight','ironking'].includes(t.type);poise.querySelector('i').style.width=((t.stag?.poise??t.iron?.poise??0)*100)+'%';
       el.target.classList.remove('hidden');
       el.target.classList.toggle('boss', !!t.T.boss||t.type==='butcher');
       el.target.classList.toggle('elite',t.type==='butcher');

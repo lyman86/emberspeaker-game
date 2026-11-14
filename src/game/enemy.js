@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { plagueUpdate, poisonPool, addStagCrown, addTotem } from './encounters.js';
+import {ironUpdate,ironPoise,hasStandard} from './iron.js';
+import {dressIronEnemy} from './iron-art.js';
 import { stagPoise } from './stag.js';
 import { dressPlagueEnemy } from './plague-art.js';
 import { Actor } from './actor.js';
@@ -9,13 +11,24 @@ import { PALETTE } from './fx.js';
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 export const ENEMY_TYPES = {
-  villager:{model:'warrior',name:'疫病村民',hp:230,dmg:[12,18],speed:3.4,range:2.2,cd:1.6,xp:50,atkSpeed:1.4,gold:[8,15],episode:2},
-  goblin:{model:'minion',name:'腐沼地精',hp:170,dmg:[18,24],speed:7,range:2,cd:1.1,xp:48,atkSpeed:1.8,scale:0.7,gold:[6,13],episode:2},
-  werewolf:{model:'elite',name:'畸变狼人',hp:620,dmg:[22,30],speed:7,range:3,cd:1.4,xp:100,atkSpeed:1.5,gold:[14,25],episode:2},
-  witch:{model:'mage',name:'疫歌女巫',hp:340,dmg:[20,28],speed:4.4,ranged:true,range:22,keep:13,cd:2.4,xp:85,atkSpeed:1.5,proj:'poison',gold:[13,22],episode:2},
+  rebel:{model:'rebel',name:'叛军盾卒',hp:620,dmg:[32,43],speed:4.7,range:2.7,cd:1.6,xp:115,atkSpeed:1.5,gold:[15,24],episode:3},
+  raider:{model:'raider',name:'铁冠掠夺者',hp:490,dmg:[38,50],speed:6.2,range:2.7,cd:1.4,xp:110,atkSpeed:1.6,gold:[16,25],episode:3},
+  arbalist:{model:'arbalist',name:'王庭弩手',hp:400,dmg:[29,39],speed:4.5,range:26,keep:17,ranged:true,proj:'arrow',cd:3,xp:125,atkSpeed:1.4,gold:[16,27],episode:3},
+  assassin:{model:'assassin',name:'兜帽影刃',hp:470,dmg:[33,44],speed:7.4,range:2.5,cd:1.2,xp:135,atkSpeed:1.8,gold:[18,29],episode:3},
+  berserker:{model:'berserker',name:'血誓狂战士',hp:1100,dmg:[42,57],speed:5.8,range:3.2,cd:1.5,xp:180,atkSpeed:1.5,gold:[25,38],episode:3},
+  captain:{model:'captain',name:'叛军督军 · 奥伦',hp:3600,dmg:[43,58],speed:4.8,range:3,cd:1.5,xp:450,atkSpeed:1.6,tough:true,scale:1.2,gold:[140,190],episode:3},
+  warbanner:{model:'rebel',name:'铁冠军阵战旗',hp:650,dmg:[0,0],speed:0,range:0,cd:99,xp:120,atkSpeed:1,radius:.55,gold:[20,30],episode:3},
+  ballista:{model:'rebel',name:'关隘重弩',hp:1300,dmg:[60,85],speed:0,range:38,cd:5,xp:220,atkSpeed:1,proj:'arrow',radius:1.6,gold:[50,75],episode:3},
+  blackknight:{model:'blackknight',name:'黑铁骑士 · 维斯特',hp:7200,dmg:[55,72],speed:5,range:3.5,cd:1.8,xp:700,atkSpeed:1.5,tough:true,boss:true,scale:1.25,radius:.9,gold:[230,300],episode:3},
+  ironking:{model:'ironking',name:'叛王 · 赫拉克留斯',hp:24000,dmg:[65,85],speed:5.2,range:4,cd:1.8,xp:1800,atkSpeed:1.5,tough:true,boss:true,proj:'arrow',scale:1.45,radius:1.05,gold:[500,650],episode:3},
+
+  villager:{model:'warrior',name:'疫病村民',hp:300,dmg:[17,24],speed:3.4,range:2.2,cd:1.6,xp:50,atkSpeed:1.4,gold:[8,15],episode:2},
+  goblin:{model:'minion',name:'腐沼地精',hp:220,dmg:[24,32],speed:7,range:2,cd:1.1,xp:48,atkSpeed:1.8,scale:0.7,gold:[6,13],episode:2},
+  werewolf:{model:'elite',name:'畸变狼人',hp:820,dmg:[30,42],speed:7,range:3,cd:1.4,xp:100,atkSpeed:1.5,gold:[14,25],episode:2},
+  witch:{model:'mage',name:'疫歌女巫',hp:460,dmg:[27,37],speed:4.4,ranged:true,range:22,keep:13,cd:2.4,xp:85,atkSpeed:1.5,proj:'poison',gold:[13,22],episode:2},
   totem:{model:'mage',name:'疫歌图腾',hp:500,dmg:[0,0],speed:0,range:0,cd:99,xp:80,atkSpeed:1,gold:[0,0],episode:2},
-  butcher:{model:'elite',name:'缝合屠夫',hp:3500,dmg:[30,42],speed:3.3,range:3.4,cd:2.2,xp:350,atkSpeed:1.2,scale:1.7,radius:1.1,tough:true,gold:[140,180],episode:2},
-  stag:{model:'stag',name:'荆冠鹿王',hp:11500,dmg:[34,48],speed:4.5,range:4,cd:2,xp:1000,atkSpeed:1.4,scale:1.65,radius:1.2,tough:true,boss:true,gold:[350,450],episode:2},
+  butcher:{model:'elite',name:'缝合屠夫',hp:4800,dmg:[42,58],speed:3.3,range:3.4,cd:2.2,xp:350,atkSpeed:1.2,scale:1.7,radius:1.1,tough:true,gold:[140,180],episode:2},
+  stag:{model:'stag',name:'荆冠鹿王',hp:17000,dmg:[62,86],speed:5.2,range:4,cd:2,xp:1000,atkSpeed:1.4,scale:1.65,radius:1.2,tough:true,boss:true,gold:[350,450],episode:2},
   minion: { model: 'minion', name: '腐骨尸鬼', hp: 55, dmg: [6, 10], speed: 6.2, range: 2.0, cd: 1.2, xp: 14, atkSpeed: 1.5, gold: [2, 8] },
   warrior: { model: 'warrior', name: '亡兵行尸', hp: 150, dmg: [12, 17], speed: 4.3, range: 2.4, cd: 1.6, xp: 28, atkSpeed: 1.6, gold: [6, 14] },
   rogue: { model: 'rogue', name: '掷骨怪', hp: 75, dmg: [9, 13], speed: 4.6, ranged: true, range: 17, keep: 9, cd: 2.3, xp: 22, atkSpeed: 1.3, proj: 'arrow', gold: [4, 12] },
@@ -29,7 +42,7 @@ export class Enemy extends Actor {
     const T = ENEMY_TYPES[type];
     super(game, T.model, { scale: T.scale ?? 1 });
     this.level=opts.level??({minion:1,warrior:3,rogue:3,mage:4,elite:5,boss:6}[type]??6);
-    this.T = T; this.type = type; this.name = T.name; this.tag = opts.tag;
+    this.T = T; this.type = type; this.name = opts.name??T.name; this.tag = opts.tag;
     this.pos.set(x, 0, z);
     this.home = new THREE.Vector3(x, 0, z);
     this.maxHp = T.hp; this.hp = T.hp;
@@ -48,14 +61,15 @@ export class Enemy extends Actor {
     else if (opts.spawnIn) { this.state = 'rising'; this.t = this.duration('Spawn_Ground') / 1.6; this.play('Spawn_Ground', { once: true, speed: 1.6 }); }
     else this.play(T.boss ? 'Idle_B' : 'Idle');
     if(T.episode===2){this.tintBase=new THREE.Color(0.005,0.015,0.001);this.tint=this.tintBase;this._dirty=true;dressPlagueEnemy(this);}
+    if(T.episode===3)dressIronEnemy(this);
     if(type==='stag')addStagCrown(this);if(type==='totem')addTotem(this);
     if (T.boss) { this.phase = 1; this.summons = 0; this.bossT = 2; }
   }
 
-  voice() {return ({villager:'e_villager',goblin:'e_goblin',werewolf:'e_wolf',witch:'e_witch',butcher:'e_butcher',stag:'e_wolf'})[this.type]??'rattle';}
-  dispose(){this.plagueArtDispose?.();const geos=new Set();for(const o of this.encounterArt??[]){o.traverse(m=>{if(m.geometry)geos.add(m.geometry);});o.removeFromParent();}for(const geo of geos)geo.dispose();for(const mat of this.encounterMaterials??[])mat.dispose();super.dispose();}
+  voice() {if(this.T.episode===3)return 'warcry';return ({villager:'e_villager',goblin:'e_goblin',werewolf:'e_wolf',witch:'e_witch',butcher:'e_butcher',stag:'e_wolf'})[this.type]??'rattle';}
+  dispose(){this.ironArtDispose?.();this.plagueArtDispose?.();const geos=new Set();for(const o of this.encounterArt??[]){o.traverse(m=>{if(m.geometry)geos.add(m.geometry);});o.removeFromParent();}for(const geo of geos)geo.dispose();for(const mat of this.encounterMaterials??[])mat.dispose();super.dispose();}
 
-  stun(sec) { if(this.type==='stag'&&this.alive){stagPoise(this,Math.min(.75,sec*.5));return;}if (!this.alive || this.state === 'dormant' || this.T.boss) return; this.stagger = Math.max(this.stagger, this.T.tough ? sec * 0.4 : sec); if (this.state === 'attack') this.state = 'chase'; this.play('Hit_A', { once: true, restart: true, speed: 0.8, fade: 0.05 }); }
+  stun(sec) { if(this.T.episode===3&&this.T.boss){ironPoise(this,Math.min(.8,sec*.6));return;}if(this.type==='stag'&&this.alive){stagPoise(this,Math.min(.75,sec*.5));return;}if (!this.alive || this.state === 'dormant' || this.T.boss) return; this.stagger = Math.max(this.stagger, this.T.tough ? sec * 0.4 : sec); if (this.state === 'attack') this.state = 'chase'; this.play('Hit_A', { once: true, restart: true, speed: 0.8, fade: 0.05 }); }
 
   slowFor(sec) { if (!this.alive) return; this.slow = Math.max(this.slow, sec); this.tint = new THREE.Color(0.05, 0.25, 0.04); }
 
@@ -64,6 +78,7 @@ export class Enemy extends Actor {
 
   freeze(sec) {
     if (!this.alive) return;
+    if(this.T.episode===3&&this.T.boss)ironPoise(this,Math.min(.4,sec*.2));
     if(this.type==='stag')stagPoise(this,Math.min(.35,sec*.15));
     if (this.T.tough) { this.slow = Math.max(this.slow, sec * 1.2); }
     else { this.frozen = Math.max(this.frozen, sec * 0.6); this.slow = Math.max(this.slow, sec * 1.6); }
@@ -72,7 +87,7 @@ export class Enemy extends Actor {
 
   takeDamage(v, { from, knock = 0, quiet = false, stun = 0 } = {}) {
     if (!this.alive || this.invulnerable) return false;
-    if(this.asleep&&this.T.boss){this.game.story.onTrigger(this.type==='stag'?'stag_intro':'boss_intro');return false;}
+    if(this.asleep&&this.T.boss){this.game.story.onTrigger(({stag:'stag_intro',blackknight:'knight_intro',ironking:'king_intro'})[this.type]??'boss_intro');return false;}
     this.hp -= v;
     this.flash(1);
     this.lastHit = { from: from ? from.clone?.() ?? { ...from } : null, knock, v, quiet };
@@ -106,10 +121,10 @@ export class Enemy extends Actor {
     }
     this.tint = null; this._dirty = true;
     this.play(Math.random() < 0.5 ? 'Death_A' : 'Death_B', { once: true, fade: 0.08, speed: this.T.boss ? 0.6 : 1.1 });
-    g.audio.play(this.T.episode===2?this.voice():'bonedeath', this.pos, this.T.tough ? 1.1 : 0.65);
+    g.audio.play(this.T.episode===3?'hurt':this.T.episode===2?this.voice():'bonedeath', this.pos, this.T.tough ? 1.1 : 0.65);
     g.particles.emit({ pos: { x: this.pos.x, y: 1.1 * this.scale, z: this.pos.z }, count: 16, speed: [2, 7], life: [0.3, 0.8], size: [0.2, 0.5], c0: PALETTE.bone.core, c1: PALETTE.bone.cool, gravity: 14 });
     g.smoke.emit({ pos: { x: this.pos.x, y: 0.6, z: this.pos.z }, count: 6, radius: 0.5, speed: [0.3, 1.2], life: [0.6, 1.3], size: [1.2, 2.4], c0: [0.4, 0.38, 0.33], c1: [0.2, 0.19, 0.17], alpha: 0.25, grow0: 0.5, grow1: 1.5 });
-    if(this.type==='villager')poisonPool(g,this.pos,2.5,5,9);
+    if(this.type==='villager')poisonPool(g,this.pos,2.5,5,12);
     g.onEnemyKilled(this);
   }
 
@@ -183,6 +198,7 @@ export class Enemy extends Actor {
     const dx = pl.pos.x - this.pos.x, dz = pl.pos.z - this.pos.z, dist = Math.max(0.01, Math.hypot(dx, dz));
     const active = pl.alive && !g.cinematic;
 
+    if(active&&ironUpdate(this,this.T.boss?dt:edt,dist)){this.mixer.timeScale=ts;this.updateVisual(dt,9);return true;}
     if (active && plagueUpdate(this,this.type==='stag'?dt:edt,dist)){this.mixer.timeScale=this.type==='stag'?1:ts;this.updateVisual(dt,9);return true;}
     if (this.state === 'dormant') {
       if (active && dist < 11.5 && (dist < 6 || g.level.clear(this.pos.x, this.pos.z, pl.pos.x, pl.pos.z, 0.3))) this.awaken();
@@ -206,7 +222,7 @@ export class Enemy extends Actor {
         this.face(pl.pos.x, pl.pos.z);
         this.atkSpeed = T.atkSpeed;
         this.play('attack', { once: true, restart: true, speed: this.atkSpeed, fade: 0.08 });
-        if (!T.ranged) g.audio.play('e_claw', this.pos);
+        if (!T.ranged) g.audio.play(T.episode===3?'swing':'e_claw', this.pos);
       } else if (T.ranged && los) {
         this.face(pl.pos.x, pl.pos.z);
         if (dist < T.keep - 3) { // back away
@@ -223,7 +239,7 @@ export class Enemy extends Actor {
       const dur = this.duration('attack') / this.atkSpeed;
       if (!this.didHit && this.t >= dur * this.releaseAt('attack')) {
         this.didHit = true;
-        const dmg = rnd(T.dmg[0], T.dmg[1]);
+        const dmg = rnd(T.dmg[0], T.dmg[1])*(T.ranged?1:hasStandard(this)?1.25:1)*(this.enraged?1.2:1);
         if (T.ranged) this._fire(dmg);
         else if (dist < T.range + 0.9&&g.level.clear(this.pos.x,this.pos.z,pl.pos.x,pl.pos.z,.1)) { pl.hurt(dmg, this.pos); g.audio.play('e_hit', pl.pos); if (T.tough) { g.gfx.addShake(0.4); g.fx.ring(pl.pos, { color: [2, 0.4, 0.1], r0: 0.3, r1: 2.5, dur: 0.3 }); } }
       }
@@ -246,19 +262,19 @@ export class Enemy extends Actor {
     const from = new THREE.Vector3(this.pos.x + Math.sin(this.facing) * 0.8 * this.scale, 1.4 * this.scale, this.pos.z + Math.cos(this.facing) * 0.8 * this.scale);
     const dir = dirOverride ?? new THREE.Vector3(pl.pos.x - from.x, 0, pl.pos.z - from.z).normalize();
     if (T.proj === 'arrow') {
-      g.audio.play('e_throw', this.pos);
+      g.audio.play(T.episode===3?'arrow':'e_throw', this.pos);
       const mesh = g.assets.prop('Skeleton_Arrow');
       mesh.rotation.set(0, Math.atan2(dir.x, dir.z), 0); mesh.rotateX(Math.PI / 2);
       g.gfx.scene.add(mesh);
       shoot(g, { team: 'enemy', pos: from, vel: dir.multiplyScalar(24), pal: 'bone', mesh, r: 0.5,
         trail: (dt, pr) => { if (Math.random() < 0.5) g.particles.emit({ pos: pr.pos, count: 1, speed: [0, 0.3], life: [0.15, 0.3], size: [0.15, 0.3], c0: [0.5, 0.5, 0.45], c1: [0.1, 0.1, 0.1] }); },
-        onHit: (hit, pos) => { if (hit) { hit.hurt(dmg, pos); g.audio.play('e_hit', pos); } g.particles.emit({ pos, count: 6, speed: [1, 4], life: [0.2, 0.4], size: [0.12, 0.3], c0: PALETTE.bone.hot, c1: PALETTE.bone.cool, gravity: 8 }); } });
+        onHit: (hit, pos) => { if (hit) { hit.hurt(dmg*(hasStandard(this)?1.25:1), pos); g.audio.play('e_hit', pos); } g.particles.emit({ pos, count: 6, speed: [1, 4], life: [0.2, 0.4], size: [0.12, 0.3], c0: PALETTE.bone.hot, c1: PALETTE.bone.cool, gravity: 8 }); } });
     } else {
       const pal=T.proj==='poison'?'poison':'dark';
       g.audio.play(T.proj==='poison'?'e_poison':'darkbolt', this.pos);
       g.particles.emit({ pos: from, count: 8, speed: [1, 4], life: [0.2, 0.5], size: [0.3, 0.7], c0: PALETTE.dark.core, c1: PALETTE.dark.cool });
       shoot(g, { team: 'enemy', pos: from, vel: dir.multiplyScalar(15 * speedMul), pal, size: 0.3 * Math.min(1.5, this.scale), r: 0.6, light: 40, life: 3.2,
-        onHit: (hit, pos) => { g.fx.spark(pos, pal, 12); if (hit) { hit.hurt(dmg, pos); g.audio.play('e_hit', pos); } } });
+        onHit: (hit, pos) => { g.fx.spark(pos, pal, 12); if (hit) { hit.hurt(dmg*(hasStandard(this)?1.25:1), pos); g.audio.play('e_hit', pos); } } });
     }
   }
 

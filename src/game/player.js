@@ -124,7 +124,7 @@ export class Player extends Actor {
 
   onHit(n) { if (this.stats.lifeHit) this.heal(this.stats.lifeHit * n, true); }
 
-  onKill() { if (this.has('gravewalker')) this.buff('gravewalker', 3, {}); }
+  onKill(e) { if(e?.T.episode===3&&this.has('ironmarch'))this.buff('ironmarch',4,{}); if (this.has('gravewalker')) this.buff('gravewalker', 3, {}); }
 
   /** Holy aegis: hexagonal light bubble with a rotating rune circle at the feet and drifting motes. */
   showShield(on) {
@@ -309,7 +309,7 @@ export class Player extends Actor {
     if (!this.alive || this.invuln > 0 || this.buffs.divineWings || this.game.cinematic) return;
     const g = this.game;
     if (this.has('silentbell') && (this._bellCd ?? 0) <= 0) { this._bellCd = 8; g.ui.number(this.pos, '抵消', 'info'); g.audio.play('bell', this.pos, 0.2); return; }
-    let v = dmg * (1 - this.dr);
+    let v = dmg * (1 - this.dr)*(this.buffs.ironmarch?.9:1);
     if (this.shield > 0) {
       if (this.has('aegis')) v *= 0.8;
       const ab = Math.min(this.shield, v); this.shield -= ab; v -= ab; this.shieldHit(from);
@@ -456,7 +456,7 @@ export class Player extends Actor {
     if (changed) this.recalc();
 
     if (this.alive) {
-      this.hp = Math.min(this.maxHp, this.hp + st.regen * dt);
+      this.hp = Math.min(this.maxHp, this.hp + st.regen * dt * (this.plagueUntil>g.time?1-.12*(this.plagueStacks??0):1));
       const inCombat = g.enemies.some((e) => e.alive && e.state !== 'dormant' && !e.asleep && e.pos.distanceTo(this.pos) < 16);
       const regen = this.C.res.regen < 0 ? (inCombat ? 0 : this.C.res.regen) : this.C.res.regen * (1 + this.level * 0.05);
       this.gainRes((regen + st.resRegen) * dt);
@@ -468,7 +468,7 @@ export class Player extends Actor {
       const q = this.queued;
       if (q && (!q.target.alive || this.lock > 0 && false)) this.queued = null;
       else if (q && this.pos.distanceTo(q.target.pos) - q.target.radius <= this.skills[q.i].melee - 0.4) { this.stop(); this.castSlot(q.i, q.target.pos, q.target); }
-      const speed = this.speed * (this.buffs.gravewalker ? 1.3 : 1);
+      const speed = this.speed * (this.buffs.gravewalker ? 1.3 : this.buffs.ironmarch?1.18:1);
       if (this.lock > 0) this.lock -= dt;
       else if (this.manualMove||this.path.length) {
         const manual=this.manualMove,wp=manual?{x:this.pos.x+manual.x*3,z:this.pos.z+manual.z*3}:this.path[0];

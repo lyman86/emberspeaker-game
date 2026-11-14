@@ -26,7 +26,7 @@ function leap(e,target,delay,radius,damage) {
 function summon(e,n=2) {
   const g=e.game;
   const count=g.enemies.filter(o=>o.alive&&o.tag==='summon').length;
-  for(let i=0;i<Math.min(n,12-count);i++){
+  for(let i=0;i<Math.min(n,9-count);i++){
     const a=i*6.28/n,q=e.pos.clone().add(V(Math.sin(a)*4,0,Math.cos(a)*4));
     if(g.level.blocked(q.x,q.z,0.8))continue;
     g.spawnEnemy('goblin',q.x,q.z,{tag:'summon',level:e.level});g.fx.pillar(q,'poison',20,4);
@@ -42,21 +42,21 @@ export function plagueUpdate(e,dt,dist) {
   const aware=e.type==='stag'||dist<25&&g.level.clear(e.pos.x,e.pos.z,p.pos.x,p.pos.z,0.3);
   if(!aware)return false;
   e.specialCd=(e.specialCd??4)-dt;
-  if(e.type==='witch' && e.specialCd<=0 && dist<25){e.specialCd=12;summon(e,2);g.audio.play('e_witch',e.pos);e.actionLock=1.4;e.play('Spellcast_Summon',{once:true,restart:true});return true;}
+  if(e.type==='witch' && e.specialCd<=0 && dist<25){e.specialCd=10;summon(e,3);g.audio.play('e_witch',e.pos);e.actionLock=1.4;e.play('Spellcast_Summon',{once:true,restart:true});return true;}
   if(e.type==='werewolf' && e.hp/e.maxHp<0.3 && !e.enraged){e.enraged=true;e.tint=new THREE.Color(0.3,0.06,0.01);g.audio.play('e_wolf',e.pos);g.ui.toast('畸变狼人进入狂暴');}
   if(['goblin','werewolf','butcher'].includes(e.type) && e.specialCd<=0 && dist<20){
-    e.specialCd=e.type==='butcher'?7:6;
+    e.specialCd=e.type==='butcher'?6:5;
     const c=p.pos.clone();
     if(e.type==='butcher'){
       e.actionLock=2.4;e.play('attack',{once:true,restart:true,speed:0.55});g.audio.play('e_butcher',e.pos);
       const start=e.pos.clone(),dir=c.clone().sub(start).setY(0).normalize();
       for(let i=1;i<=7;i++)g.fx.telegraph(start.clone().addScaledVector(dir,i*2),1.8,1,[1.6,0.25,0.1]);
-      g.after(1,()=>{if(!e.alive)return;let t=0,hit=false;g.fx.add(d=>{t+=d;g.level.move(e.pos,dir.x*22*d,dir.z*22*d,e.radius);if(!hit&&e.pos.distanceTo(p.pos)<3){hit=true;p.hurt(35,e.pos);}return e.alive&&t<0.7;});});
-      strike(e,c,6,2,32,'steel');
+      g.after(1,()=>{if(!e.alive)return;let t=0,hit=false;g.fx.add(d=>{t+=d;g.level.move(e.pos,dir.x*22*d,dir.z*22*d,e.radius);if(!hit&&e.pos.distanceTo(p.pos)<3){hit=true;p.hurt(58,e.pos);}return e.alive&&t<0.7;});});
+      strike(e,c,6,2,48,'steel');
       if(e.hp/e.maxHp<0.4){const corpse=g.corpses().find(o=>o.pos.distanceTo(e.pos)<12);if(corpse){corpse.consume();e.hp=Math.min(e.maxHp,e.hp+e.maxHp*0.12);g.fx.pillar(e.pos,'blood',40,5);g.ui.toast('缝合屠夫吞食尸体恢复生命');}}
     } else {
-      g.audio.play(e.type==='goblin'?'e_goblin':'e_wolf',e.pos);leap(e,c,0.9,e.type==='goblin'?2.2:3,e.type==='goblin'?18:25);
-      if(e.type==='werewolf')for(let i=1;i<=2;i++)strike(e,c,3,0.9+i*0.25,16,'steel');
+      g.audio.play(e.type==='goblin'?'e_goblin':'e_wolf',e.pos);leap(e,c,0.9,e.type==='goblin'?2.2:3,e.type==='goblin'?26:38);
+      if(e.type==='werewolf')for(let i=1;i<=2;i++)strike(e,c,3,0.9+i*0.25,22,'steel');
     }
     return true;
   }

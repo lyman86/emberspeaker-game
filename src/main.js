@@ -7,6 +7,7 @@ import { Materials } from './core/materials.js';
 import { Level, CELL, containsTrigger } from './game/level.js';
 import { LEVELS } from './game/maps.js';
 import { Actor } from './game/actor.js';
+import {XP_TABLE} from './game/progression.js';
 import { Player } from './game/player.js';
 import { Enemy } from './game/enemy.js';
 import { Ally } from './game/ally.js';
@@ -18,9 +19,9 @@ import { CLASS_SKILLS } from './game/skills.js';
 import { UI } from './game/ui.js';
 import { TouchControls } from './game/touch.js';
 import { Guidance } from './game/guidance.js';
+import {ironDamage} from './game/iron.js';
 import { bossDamage } from './game/stag.js';
-import { Campaign } from './game/campaign.js';
-import { LEGENDARIES } from './game/items.js';
+import { IronCampaign as Campaign } from './game/iron-campaign.js';
 import { rollDrop, makeItem, RARITY } from './game/items.js';
 import { visualKind } from './game/gear.js';
 
@@ -157,6 +158,13 @@ class Game {
       startLevel=qa==='stag'?'swamp':['forest','swamp'].includes(qa)?qa:['boss','collision'].includes(qa)?'crypt':['road','mill','grove'].includes(qa)?'forest':'camp';
       if(['boss','collision'].includes(qa)){this.story.stage='crypt';this.story.flags={key:true,bossTalk:params.has('retry')};}
       if(qa==='stag'){this.player.level=10;this.player.equip={};for(const base of this.player.C.start){const item=makeItem(base,{ilvl:9,rarity:'common'});this.player.equip[item.slot]=item;}this.player.skillRanks=Object.fromEntries(this.player.skills.map(s=>[s.id,s.slot===6?1:[2,3,4].includes(s.slot)?2:1]));this.player.recalc();this.player.refreshGear();this.player.hp=this.player.maxHp;this.player.mp=this.player.maxMp;this.player.potions={hp:6,mp:6};}
+      if(['pass','fortress','knight','ironking'].includes(qa)){
+        this.story.flags.ep2.done=true;this.story.flags.ep3={started:true,aida:qa!=='pass',orders:qa!=='pass',knight:qa==='ironking',standards:[]};
+        startLevel=qa==='pass'?'pass':'fortress';this.player.level=qa==='pass'?10:qa==='ironking'?13:12;this.player.xp=XP_TABLE[this.player.level-1];
+        this.player.equip={};for(const base of this.player.C.start){const it=makeItem(base,{ilvl:this.player.level-1,rarity:'rare'});this.player.equip[it.slot]=it;}
+        this.player.skillRanks=Object.fromEntries(this.player.skills.map(s=>[s.id,s.slot===6?(this.player.level>=13?2:1):[2,3,4].includes(s.slot)?Math.min(3,1+Math.floor((this.player.level-s.unlock)/3)):1]));
+        this.player.recalc();this.player.refreshGear();this.player.hp=this.player.maxHp;this.player.mp=this.player.maxMp;this.player.potions={hp:8,mp:8};
+      }
       if(qa==='journey')this.story.flags.ep2={totems:[]};
       if(qa==='road')this.story.flags.ep2={started:true,totems:[]};
       if(qa==='grove')this.story.flags.ep2={started:true,messenger:true,totems:[]};
@@ -164,11 +172,13 @@ class Game {
     }
     await this.loadLevel(startLevel, { silent: true });
     if(import.meta.env.DEV&&params.has('qa')){
-      const point={boss:[15,13],collision:[25,27],phone:[7,23],stag:[17,11],mill:[25,14],grove:[19,40]}[params.get('qa')];
+      const point={boss:[15,13],collision:[25,27],phone:[7,23],stag:[17,11],mill:[25,14],grove:[19,40],knight:[21,32],ironking:[21,19]}[params.get('qa')];
       if(point){this.player.pos.copy(this.level.center(...point));this.gfx.snap(this.player.pos);}
       if(params.get('qa')==='stag'){const e=this.enemies.find(e=>e.type==='stag');if(e){const phase=Number(params.get('phase')??1);e.hp=e.maxHp*(phase===3?.2:phase===2?.5:1);if(params.has('move')){e.phase=phase;e.stag={phase,index:({roots:0,cleave:1,charge:2,nova:3})[params.get('move')]??0,rest:.5,cast:null,poise:0,exposed:0};}}}
+      if(params.get('qa')==='ironking'){const e=this.enemies.find(e=>e.type==='ironking');e.hp=e.maxHp*(params.get('phase')==='3'?.25:params.get('phase')==='2'?.5:1);}
       const bar=document.createElement('div');bar.id='qa-campaign';bar.style.cssText='position:fixed;left:16px;top:135px;z-index:16;display:flex;gap:6px';
       const button=(text,fn)=>{const b=document.createElement('button');b.textContent=text;b.style.cssText='font-size:12px;letter-spacing:0;padding:7px 10px';b.onclick=fn;bar.appendChild(b);};
+      if(['pass','fortress','knight','ironking'].includes(params.get('qa')))button('切换第三关测试点',()=>{location.href='?qa='+({pass:'knight',knight:'ironking',ironking:'pass',fortress:'ironking'}[params.get('qa')])+(this.touchMode?'&touch=1':'');});
       button('检查第二集音频',()=>{const keys=['e_villager','e_goblin','e_wolf','e_witch','e_butcher','e_poison','e_roots'];const ok=keys.filter(k=>this.audio.overrides[k]).length;const beds=['amb_forest','amb_swamp','amb_mill'].filter(k=>this.audio.loops?.[k]).length;this.ui.toast(`音频解码：怪物 ${ok}/7 · 环境 ${beds}/3`);this.audio.play('e_witch',this.player.pos);});
       if(params.get('qa')==='collision')button('冲向柜子背面',()=>{const b=this.level.boxes.filter(b=>b.prop==='cabinet').sort((a,b)=>Math.hypot(a.x-this.player.pos.x,a.z-this.player.pos.z)-Math.hypot(b.x-this.player.pos.x,b.z-this.player.pos.z))[0];if(b){const dir=new THREE.Vector3(b.x-this.player.pos.x,0,b.z-this.player.pos.z).normalize();this.player.castSlot(5,new THREE.Vector3(b.x,0,b.z).addScaledVector(dir,3));}});
       button('沿当前指引行走',()=>{const t=this.story.guidance();if(t)this.player.moveTo(t.x,t.z);});
@@ -252,6 +262,7 @@ class Game {
       if (s.tag === 'elite' && this.story.flags.key) continue;
       const f=this.story.second;
       if(s.tag?.startsWith('totem_') && f.totems.includes(s.tag) || s.tag==='butcher' && f.butcher || s.tag==='stag' && f.bossDead)continue;
+      if(this.story.skipSpawn(s))continue;
       this.spawnEnemy(s.type, s.x * CELL + 2, s.z * CELL + 2, s);
     }
     for (const n of d.npcs) this._makeNpc(n);
@@ -351,7 +362,7 @@ class Game {
     for (const k of c.potions ?? []) this.dropLoot(k, 1, c.pos, true);
     const pl = this.player;
     pl.addMaterial('soul',c.golden?3:1);
-    this.dropItem(c.golden ? rollDrop(pl.cls, pl.level + 1, 1) : rollDrop(pl.cls, pl.level, 0), c.pos);
+    this.dropItem(c.golden ? rollDrop(pl.cls, pl.level + 1, 1,this.level.spec.episode??(['forest','swamp'].includes(this.level.id)?2:1)) : rollDrop(pl.cls, pl.level, 0,this.level.spec.episode??(['forest','swamp'].includes(this.level.id)?2:1)), c.pos);
     this.save();
   }
 
@@ -480,12 +491,16 @@ class Game {
   hurtEnemy(e, dmg, opts = {}) {
     const multiplier=((e.markedUntil??0)>this.time?1.2:1)*(this.player.has('plagueband') && (e.slow>0||e.frozen>0)?1.2:1);
     const v = typeof dmg === 'number' ? Math.round(dmg) : dmg.v, crit = typeof dmg === 'number' ? false : dmg.crit;
-    const final=bossDamage(e,Math.round(v*multiplier),opts,this);
+    const final=ironDamage(e,bossDamage(e,Math.round(v*multiplier)*(this.player.buffs.siegebreaker?1.15:1),opts,this),opts,this);
     if (!e.takeDamage(final, opts)) { if (e.alive && e.invulnerable) this.ui.number({ x: e.pos.x, y: e.scale, z: e.pos.z }, '免疫', 'info'); return; }
     if(this.player.has('hookchain') && (this.player._hookCd??0)<=0 && e.alive && !e.T.tough && Math.random()<0.15){
       this.player._hookCd=3;e.stun(1);const dir=this.player.pos.clone().sub(e.pos).setY(0);if(dir.length()>2){dir.setLength(Math.min(3,dir.length()-2));this.level.move(e.pos,dir.x,dir.z,e.radius);}
     }
     this.ui.number({ x: e.pos.x, y: 0.6 * e.scale, z: e.pos.z }, final + (crit ? '!' : ''), crit ? 'crit' : opts.ally ? 'ally' : '');
+    if(!opts.ally&&!opts.quiet&&this.player.has('ironseal')&&e.alive){
+      const pl=this.player;pl._sealHits=pl._sealTarget===e?(pl._sealHits??0)+1:1;pl._sealTarget=e;
+      if(pl._sealHits>=3&&!(pl._sealAt>this.time)){pl._sealHits=0;pl._sealAt=this.time+2;const extra=Math.round(final*.6);e.takeDamage(extra,{...opts,quiet:true});this.ui.number(e.pos,extra+' 印玺','crit');this.fx.spark(e.pos,'steel',12);}
+    }
     if (!opts.ally) this.ui.setTarget(e);
     if (!opts.quiet) this.audio.play('hit', e.pos, 0.7);
     if (crit) this.hitStop(0.035);
@@ -495,23 +510,25 @@ class Game {
   onEnemyKilled(e) {
     if (e.tag !== 'summon' || Math.random() < 0.5) this.after?.(0.5, () => this.decals.blood(e.pos, (e.T.tough ? 3.4 : 2.2) * (e.scale ?? 1)));
     const T = e.T, pl = this.player;
-    pl.gainXp(T.xp);
+    if(e.tag!=='summon')pl.gainXp(T.xp);
     if(e.tag!=='summon' && e.type!=='totem'){
-      pl.addMaterial(T.episode===2?'venom':'bone',T.tough?3:1);
+      pl.addMaterial(T.episode===3?'insignia':T.episode===2?'venom':'bone',T.tough?3:1);
       if(T.boss)pl.addMaterial('star');
       else if(T.tough)pl.addMaterial('soul',2);
       else if(Math.random()<0.45)pl.addMaterial('iron');
     }
-    pl.onKill();
-    if (Math.random() < 0.75 || T.tough) { const n = T.tough ? 5 : 1; for (let i = 0; i < n; i++) this.dropLoot('gold', Math.round(rnd(T.gold[0], T.gold[1]) / n), e.pos, T.tough); }
+    pl.onKill(e);
+    if (e.tag!=='summon'&&(Math.random() < 0.75 || T.tough)) { const n = T.tough ? 5 : 1; for (let i = 0; i < n; i++) this.dropLoot('gold', Math.round(rnd(T.gold[0], T.gold[1]) / n), e.pos, T.tough); }
     const r = Math.random();
     if (T.tough) { this.dropLoot('hp', 1, e.pos, true); this.dropLoot('mp', 1, e.pos, true); }
     else if (e.tag !== 'summon') { if (r < 0.13) this.dropLoot('hp', 1, e.pos); else if (r < 0.22) this.dropLoot('mp', 1, e.pos); }
     // equipment: special and legendary gear only comes from the field
-    if(e.type==='stag'){const pool=LEGENDARIES.filter(l=>l.episode===2),L=pool[Math.floor(Math.random()*pool.length)];this.dropItem(makeItem(L.base,{ilvl:10,rarity:'legendary',legendary:L}),e.pos);}
-    if (T.boss) { this.dropItem(rollDrop(pl.cls, pl.level + 2, 2), e.pos); this.dropItem(rollDrop(pl.cls, pl.level + 1, 1), e.pos); this.dropItem(rollDrop(pl.cls, pl.level + 1, 1), e.pos); }
-    else if (T.tough) { this.dropItem(rollDrop(pl.cls, pl.level + 1, 1), e.pos); this.dropItem(rollDrop(pl.cls, pl.level, 0), e.pos); }
-    else if (e.tag !== 'summon' && Math.random() < ({ minion: 0.09, warrior: 0.14, rogue: 0.12, mage: 0.16 }[e.type]??0.14)) this.dropItem(rollDrop(pl.cls, pl.level, 0), e.pos);
+    if(e.tag!=='summon'){
+      const chapter=T.episode??1;
+      if(T.boss){this.dropItem(rollDrop(pl.cls,Math.max(e.level,pl.level)+1,2,chapter),e.pos);this.dropItem(rollDrop(pl.cls,pl.level+1,1,chapter),e.pos);}
+      else if(T.tough){this.dropItem(rollDrop(pl.cls,pl.level+1,1,chapter),e.pos);this.dropItem(rollDrop(pl.cls,pl.level,0,chapter),e.pos);}
+      else if(Math.random()<.14)this.dropItem(rollDrop(pl.cls,pl.level,0,chapter),e.pos);
+    }
     this.story.onKill(e);
   }
 
@@ -527,8 +544,9 @@ class Game {
     this.projectiles = [];
     for (const e of this.enemies) {
       if (!e.alive) continue;
+      e.ironMove=null;e.ironCd=2;e.stagger=0;e.frozen=0;e.slow=0;
       if (e.tag === 'summon') { e.dispose(); e.gone = true; continue; }
-      if (e.T.boss) { e.asleep = true; e.hp = e.maxHp; e.summons = 0; e.phase=1; e.stag=null;e.intent='';e.barkUntil=0; e.bossT=1.2; e.specialCd=2; e.queue=[]; e.invulnerable = false; e.state = 'idle'; e.pos.copy(e.home); }
+      if (e.T.boss) { e.asleep = true; e.hp = e.maxHp; e.summons = 0; e.phase=1; e.stag=null;e.iron=null;e.ironMove=null;e.intent='';e.barkUntil=0; e.bossT=1.2; e.specialCd=2; e.queue=[]; e.invulnerable = false; e.state = 'idle'; e.pos.copy(e.home); }
       else if (e.state !== 'dormant' && e.state !== 'rising') { e.state = 'idle'; e.pos.copy(e.home); e.hp = e.maxHp; }
     }
     this.enemies = this.enemies.filter((e) => !e.gone);
@@ -574,7 +592,7 @@ class Game {
 
     this.touch?.update();
     pl.update(dt);
-    for (let i = this.enemies.length - 1; i >= 0; i--) { const e = this.enemies[i]; if (!e.update(dt)) { e.dispose(); this.enemies.splice(i, 1); } }
+    for (let i = this.enemies.length - 1; i >= 0; i--) { const e = this.enemies[i]; const far=e.pos.distanceToSquared(this.player.pos)>70*70;e.root.visible=!far;if(far&&e.alive&&(e.state==='idle'||e.asleep))continue; if (!e.update(dt)) { e.dispose(); this.enemies.splice(i, 1); } }
     for (let i = this.allies.length - 1; i >= 0; i--) { const a = this.allies[i]; if (!a.update(dt)) { a.dispose(); this.allies.splice(i, 1); } }
     for (const n of this.npcs) {
       if (n.actor) {

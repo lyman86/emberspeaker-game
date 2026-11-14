@@ -44,7 +44,7 @@ export const BASES = {
 
 /** Material tiers by item level — just flavour names on top of the base. */
 const TIERS = [
-  [1, '破旧的'], [3, '铁制'], [5, '精钢'], [7, '秘银'],
+  [1, '破旧的'], [3, '铁制'], [5, '精钢'], [7, '秘银'], [10, '黑铁'], [13, '王庭精钢'],
 ];
 const tierName = (lvl) => TIERS.filter(([l]) => lvl >= l).pop()[1];
 
@@ -74,6 +74,9 @@ export const AFFIXES = {
  * They only drop in the field (elites, bosses, rare chance from normal monsters at higher levels).
  */
 export const LEGENDARIES = [
+  {id:'siegebreaker',name:'破阵者之握',base:'gloves',flag:'siegebreaker',episode:3,power:'对战旗和重弩伤害提高 60%；控制破盾后，5 秒内造成的伤害提高 15%。'},
+  {id:'ironmarch',name:'铁行军靴',base:'boots',flag:'ironmarch',episode:3,power:'击杀铁冠敌人后，4 秒内移动速度提高 18%，受到的伤害降低 10%。'},
+  {id:'ironseal',name:'废王印玺',base:'ring',flag:'ironseal',episode:3,power:'持续攻击同一目标，每第三次主动命中追加本次伤害的 60%（冷却 2 秒）。'},
   {id:'thorncrown',name:'荆冠',base:'helm',flag:'thorncrown',episode:2,power:'受到近战伤害时向周围射出荆棘，造成毒素伤害（冷却 3 秒）。'},
   {id:'plagueband',name:'疫歌女巫的镶带',base:'ring',flag:'plagueband',episode:2,power:'对中毒或减速敌人的伤害提高 20%。'},
   {id:'hookchain',name:'屠夫的钩链',base:'gloves',flag:'hookchain',episode:2,power:'击中有 15% 几率将敌人拉近并眩晕 1 秒（冷却 3 秒）。'},
@@ -136,7 +139,8 @@ export function rollDrop(cls, ilvl, quality = 0, episode = 1) {
   const leg = quality === 2 ? 100 : quality === 1 ? 35 : ilvl >= 4 ? 1.2 : 0.4;
   if (Math.random() * 100 < leg) {
     const pool = LEGENDARIES.filter((l) => (!l.episode || l.episode<=episode) && (!l.cls || l.cls === cls || Math.random() < 0.25) && (quality === 2 || !l.boss));
-    const L = quality === 2 ? (Math.random() < 0.5 ? LEGENDARIES.find((l) => l.boss) : pick(pool.filter((l) => l.cls === cls))) : pick(pool);
+    const chapter=pool.filter(l=>(l.episode??1)===episode);
+    const L=pick(quality===2&&chapter.length?chapter:pool);
     return makeItem(L.base, { ilvl: ilvl + 1, rarity: 'legendary', legendary: L });
   }
   const rarity = quality >= 1 ? (r < 60 ? 'rare' : 'magic') : r < 50 ? 'common' : r < 85 ? 'magic' : 'rare';

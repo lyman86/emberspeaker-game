@@ -32,7 +32,7 @@ export class GameAudio {
     this.amb = ctx.createGain(); this.amb.gain.value = 0.5; this.amb.connect(this.master);
 
     // Zone reverbs from generated impulse responses: open night air, stone crypt, the bell chamber.
-    this.irs = { forest:this._impulse(1.1,3),swamp:this._impulse(1.8,2.8),mill:this._impulse(2.2,2.8),plague_boss:this._impulse(2.8,2.4),camp: this._impulse(1.3, 3.2), crypt: this._impulse(3.6, 2.0), boss: this._impulse(4.6, 1.8), none: this._impulse(2, 3) };
+    this.irs = { iron:this._impulse(1.8,2.8),fortress:this._impulse(3.1,2.4),iron_boss:this._impulse(3.8,2), forest:this._impulse(1.1,3),swamp:this._impulse(1.8,2.8),mill:this._impulse(2.2,2.8),plague_boss:this._impulse(2.8,2.4),camp: this._impulse(1.3, 3.2), crypt: this._impulse(3.6, 2.0), boss: this._impulse(4.6, 1.8), none: this._impulse(2, 3) };
     this.reverb = ctx.createConvolver();
     this.reverb.buffer = this.irs.crypt;
     this.revGain = ctx.createGain(); this.revGain.gain.value = 0.55;
@@ -101,7 +101,7 @@ export class GameAudio {
   }
 
   _wanted() {
-    return { camp: ['amb_wind', 'amb_fire', 'mus_camp'], crypt: ['amb_cave', 'mus_crypt'], boss: ['amb_cave', 'mus_boss'],forest:['amb_forest','mus_crypt'],swamp:['amb_swamp','mus_crypt'],mill:['amb_forest','amb_mill','mus_crypt'],plague_boss:['amb_swamp','mus_boss'], none: [] }[this.mood] ?? [];
+    return { iron:['amb_wind','amb_fire','mus_crypt'],fortress:['amb_cave','amb_fire','mus_crypt'],iron_boss:['amb_fire','mus_boss'],camp: ['amb_wind', 'amb_fire', 'mus_camp'], crypt: ['amb_cave', 'mus_crypt'], boss: ['amb_cave', 'mus_boss'],forest:['amb_forest','mus_crypt'],swamp:['amb_swamp','mus_crypt'],mill:['amb_forest','amb_mill','mus_crypt'],plague_boss:['amb_swamp','mus_boss'], none: [] }[this.mood] ?? [];
   }
 
   /** True while a recorded music track is playing (the generative score then stays silent). */
@@ -316,10 +316,11 @@ export class GameAudio {
     const ctx = this.ctx;
     // war-drum layer that rises with combat intensity (plays over recorded music too)
     if (ctx && ctx.state === 'running' && this.mood !== 'none' && this.intensity > 0.12) {
-      const now = ctx.currentTime, stepT = 60 / 96 / 2;
+      const now = ctx.currentTime, stepT = 60 / (this.mood==='iron_boss'?116:this.mood==='iron'||this.mood==='fortress'?104:96) / 2;
       if (!this._dn || this._dn < now - 0.5) { this._dn = now + 0.05; this._di = 0; }
       while (this._dn < now + 0.3) {
-        const acc = [1, 0, 0, 0.5, 0, 0, 1, 0, 1, 0, 0, 0.5, 0, 0.4, 0.7, 0.3][this._di++ % 16];
+        const march=['iron','fortress','iron_boss'].includes(this.mood);
+        const acc = (march?[1,0,.3,0,.7,0,.3,0,1,0,.3,.3,.7,.3,.5,.5]:[1,0,0,.5,0,0,1,0,1,0,0,.5,0,.4,.7,.3])[this._di++%16];
         if (acc) this._drum(this._dn, acc * 0.55 * Math.min(1, (this.intensity - 0.12) * 1.6));
         this._dn += stepT;
       }
@@ -337,18 +338,18 @@ export class GameAudio {
         const scale = [62, 65, 67, 69, 72, 74, 77];
         for (let i = 0; i < 3; i++) if (Math.random() < 0.6) this._pluck(scale[(Math.random() * scale.length) | 0], this._nextBar + 1 + i * 2 + Math.random(), 0.05);
         this._nextBar += 7;
-      } else if (['crypt','forest','swamp','mill'].includes(m)) {
+      } else if (['crypt','forest','swamp','mill','iron','fortress'].includes(m)) {
         const prog = [[26, 38, 45, 51], [26, 38, 44, 50], [25, 37, 44, 52], [26, 33, 45, 53]];
         this._pad(prog[b % 4], 9, 0.03, 380);
         if (Math.random() < 0.5) this._pluck([74, 75, 69, 81][(Math.random() * 4) | 0], this._nextBar + 2 + Math.random() * 4, 0.025);
         this._nextBar += 9;
-      } else if ((m === 'boss'||m==='plague_boss')) {
+      } else if ((m === 'boss'||m==='plague_boss'||m==='iron_boss')) {
         const prog = [[38, 50, 53, 57], [36, 48, 51, 55], [34, 46, 50, 53], [33, 45, 49, 52]];
         this._pad(prog[b % 4], 3.4, 0.04, 900);
         this._nextBar += 3.43;
       } else this._nextBar += 2;
     }
-    if ((m === 'boss'||m==='plague_boss')) {
+    if ((m === 'boss'||m==='plague_boss'||m==='iron_boss')) {
       const step = 60 / 140 / 2;
       const roots = [26, 24, 22, 21];
       while (this._nextBeat < now + 0.3) {

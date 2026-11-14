@@ -41,6 +41,7 @@ function camp() {
   d.start = { x: 12, z: 25 };
   d.room(18,16,20,18,',').room(18,18,18,19,',');
   d.trigger('north_road',19,16,{r:3,label:'北行驿道 · 第二集'});
+  d.room(20,20,23,22,',');d.trigger('iron_road',23,21,{r:3,label:'东行山道 · 第三集'});
 
   d.torch(7, 19).torch(17, 19).torch(5, 23, 'W').torch(11, 18, 'W').torch(11, 2, 'W', 0x58d0a8).torch(13, 2, 'N', 0x58d0a8).torch(11, 2, 'N', 0x58d0a8);
   d.block(5, 19, 'crates_stacked').block(19, 19, 'barrel_large').block(5, 26, 'keg').block(19, 26, 'crates_stacked', { rot: 1.2 });
@@ -203,6 +204,7 @@ function swamp() {
   d.trigger('marsh_island',17,38,{bounds:[8,33,26,38]});
   d.trigger('stag_intro',23,15,{bounds:[7,2,28,15]});d.trigger('plague_bell',17,4,{r:3,label:'疫病之钟 · 反鸣'});
   d.trigger('swamp_camp',8,4,{r:2.5,label:'返回霜暮营地'});
+  d.trigger('iron_road',26,4,{r:3,label:'东行山道 · 铁冠叛旗'});
   d.spawn('werewolf',10,30,{level:9}).spawn('werewolf',10,27,{level:9}).spawn('werewolf',23,20,{level:9});
   d.spawn('witch',18,24,{level:9}).spawn('witch',24,34,{level:9});
   for(const [x,z]of [[12,35],[13,36],[14,34],[21,36],[22,35],[23,36],[12,24],[14,25]])d.spawn('goblin',x,z,{level:8});
@@ -215,4 +217,70 @@ function swamp() {
   return {id:'swamp',name:'腐沼祭坛',sub:'雾中石径 · 古树下的第二口钟',floor:'dirt',audio:'swamp',def:d,
     mood:{bg:0x101c19,fog:0.013,hemi:[0x8caca0,0x152419,1.15],key:[0xc4ceab,1.7],exposure:1.3,playerLight:30}};
 }
-export const LEVELS = { camp, crypt, forest, swamp };
+// Chapter three replaces the plague's open groves with fortified lanes and a flanking route.
+function pass() {
+  const d=carve(43,66);
+  d.room(17,54,25,63,',').room(18,43,24,53,',').room(7,38,36,45,',');
+  d.room(20,28,22,37,'.').room(9,22,12,37,',').room(8,31,15,38,',');
+  d.room(9,12,33,27,',').room(13,10,29,11,',').room(19,2,23,11,'.');
+  d.start={x:21,z:61};d.gate('camp_gate',21,30);d.g[30][20]='#';d.g[30][22]='#';
+  d.gate('fortress_gate',21,3);for(const x of [19,20,22,23])d.g[3][x]='#';
+  d.trigger('pass_return',21,63,{r:3,label:'返回霜暮营地'});
+  d.trigger('pass_intro',21,55,{r:5});
+  d.trigger('side_winch',11,35,{r:3,label:'旧军械道 · 解除关隘绞盘'});
+  d.trigger('rebel_camp',21,26,{bounds:[9,12,33,27]});
+  d.trigger('fortress_entry',21,4,{r:3,label:'军令铁门 · 进入铁冠要塞'});
+  d.npc('aida',19,58,{model:'elin',name:'军需官 · 艾达',face:.7});
+  d.npc('iron_orders',30,15,{name:'叛军征调记录'});
+  for(const [x,z]of [[20,50],[22,48],[19,43],[23,40],[20,36],[22,36],[20,32],[22,32],[11,38],[10,32],[14,25],[26,25],[17,19],[25,19]])d.spawn('rebel',x,z,{level:10});
+  for(const [x,z]of [[18,46],[24,43],[13,39],[30,40],[11,28],[15,21],[28,21]])d.spawn('raider',x,z,{level:10});
+  for(const [x,z]of [[24,49],[8,41],[34,40],[13,23],[29,23],[24,14]])d.spawn('arbalist',x,z,{level:11});
+  d.spawn('assassin',11,25,{level:11}).spawn('assassin',30,19,{level:11});
+  d.spawn('berserker',15,15,{level:11}).spawn('berserker',27,15,{level:11});
+  d.spawn('captain',21,16,{level:11,tag:'orders'});
+  d.spawn('warbanner',21,34,{level:10,tag:'pass_standard'});
+  d.spawn('ballista',33,42,{level:10,tag:'pass_ballista',face:Math.PI});
+  for(const [x,z]of [[17,57],[25,57],[8,39],[35,39],[9,23],[32,13]])d.deco(x,z,'@iron_brazier');
+  for(const [x,z]of [[18,50],[24,50],[18,45],[24,45],[9,24],[12,24]])d.deco(x,z,'@barricade',{rot:x===9?Math.PI/2:0});
+  for(const [x,z]of [[10,13],[32,13],[10,26],[32,26]])d.block(x,z,'@war_tent');
+  for(const [x,z]of [[14,13],[28,13],[18,9],[24,9],[19,31],[23,31]])d.deco(x,z,'@iron_banner');
+  d.deco(23,59,'@iron_banner').deco(18,60,'@iron_brazier');
+  d.deco(20,60,'@sign',{text:'石脊关 · 旧军械道'}).deco(18,22,'@war_table');
+  d.chest(8,35,{gold:240,potions:['hp','mp'],golden:true});
+  d.chest(31,17,{gold:180,potions:['hp','mp']});
+  return {id:'pass',name:'石脊关 · 叛军营地',sub:'第三集 · 铁冠叛旗',episode:3,floor:'dirt',audio:'iron',def:d,
+    mood:{bg:0x171b23,fog:.008,hemi:[0x9ba9c5,0x2a211d,1.25],key:[0xe8bd88,1.9],exposure:1.3,playerLight:26}};
+}
+function fortress() {
+  const d=carve(43,62);
+  d.room(18,52,24,58,'.').room(9,38,33,51,'.').room(7,39,12,48,',').room(30,39,35,48,',');
+  d.room(19,33,23,37,'.').room(12,23,30,32,':').room(20,20,22,22,'.');
+  d.room(8,3,34,19,':');d.start={x:21,z:56};
+  d.gate('keep_seal',21,21);d.g[21][20]='#';d.g[21][22]='#';
+  d.trigger('fortress_return',21,58,{r:3,label:'返回叛军营地'});
+  d.trigger('fortress_intro',21,51,{r:5});
+  d.trigger('knight_intro',21,31,{bounds:[12,23,30,32]});
+  d.trigger('keep_gate',21,22,{r:3,label:'黑铁纹章 · 王庭大门'});
+  d.trigger('king_intro',21,18,{bounds:[8,3,34,19]});
+  d.trigger('iron_bell',21,5,{r:3,label:'铁律之钟 · 反鸣'});
+  d.trigger('iron_camp',10,5,{r:3,label:'余烬归途 · 返回营地'});
+  d.npc('iron_vera',19,54,{model:'vera',name:'拾钟人 · 薇拉'});
+  for(const [x,z]of [[18,49],[24,49],[15,44],[27,44],[19,37],[23,37],[16,28],[26,28]])d.spawn('rebel',x,z,{level:12});
+  for(const [x,z]of [[10,45],[32,45],[19,42],[23,41],[15,25],[27,25]])d.spawn('raider',x,z,{level:12});
+  for(const [x,z]of [[11,41],[31,40],[15,39],[27,39],[18,24],[24,24]])d.spawn('arbalist',x,z,{level:12});
+  d.spawn('assassin',10,40,{level:12}).spawn('assassin',32,49,{level:12});
+  d.spawn('berserker',17,46,{level:12}).spawn('berserker',25,46,{level:12});
+  d.spawn('warbanner',21,43,{level:12,tag:'fortress_standard'});
+  d.spawn('blackknight',21,26,{level:12,tag:'blackknight',asleep:true});
+  d.spawn('ironking',21,10,{level:13,tag:'ironking',asleep:true});
+  d.deco(21,3,'@iron_throne');d.deco(21,4,'@bell');d.solids.push([21,3],[21,4]);
+  for(const [x,z]of [[10,4],[32,4],[9,16],[33,16],[12,24],[30,24]])d.block(x,z,'statue',{s:1.1});
+  for(const [x,z]of [[9,39],[33,39],[13,23],[29,23],[10,6],[32,6]])d.deco(x,z,'@iron_brazier');
+  for(const [x,z]of [[13,38],[29,38],[18,33],[24,33],[14,3],[28,3]])d.deco(x,z,'@iron_banner');
+  d.deco(21,35,'@sign',{text:'黑铁校场 · 王座钟楼'});
+  d.chest(8,47,{gold:280,potions:['hp','mp'],golden:true});
+  d.chest(34,41,{gold:220,potions:['hp','mp']});
+  return {id:'fortress',name:'铁冠要塞 · 王座钟楼',sub:'铁律之钟 · 第三口反鸣',episode:3,floor:'tile',audio:'fortress',def:d,
+    mood:{bg:0x11131c,fog:.009,hemi:[0x8398c0,0x30201b,1.1],key:[0xe4c59e,1.7],exposure:1.35,playerLight:35}};
+}
+export const LEVELS = { camp, crypt, forest, swamp, pass, fortress };

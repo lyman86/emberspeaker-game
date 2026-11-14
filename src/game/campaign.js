@@ -80,7 +80,7 @@ export class Campaign extends Episode1 {
       g.fx.ground(p,{tex:'magic1',color:[3,2.2,0.8],r0:1,r1:25,dur:2,spin:1});
       if(g.level.bellGlow)g.level.bellGlow.visible=false;g.level.bellSwing=0;
       g.level.emitters=g.level.emitters.filter(e=>e.kind!=='bellmist');
-      await ui.say([['烬语者',`以${count===1?'缄默钥舌':'两枚钟舌'}奏反鸣。亡者归土，余烬归火。`],['薇拉',`${name}，从此沉寂。七口钟中的这一口，不会再惊扰亡者。`]]);
+      await ui.say([['烬语者',`以${count===1?'缄默钥舌':count===2?'两枚钟舌':'三枚钟舌'}奏反鸣。亡者归土，余烬归火。`],['薇拉',`${name}，从此沉寂。七口钟中的这一口，不会再惊扰亡者。`]]);
     } finally {g.cinematic=false;}
     ui.toast('反鸣完成 · '+name);
   }

@@ -153,3 +153,5 @@ const touch=Object.assign(Object.create(TouchControls.prototype),{g:{started:tru
 assert.equal(touch.enemy(),selected,'auto target ignores an enemy behind a prop');touch.cast(6);assert.equal(castSlot.slot,6);assert.equal(castSlot.enemy,selected);touch.cast(5);assert.equal(castSlot.enemy,null,'movement follows facing rather than a hostile target');touch.g.cinematic=true;castSlot=null;touch.cast(0);assert.equal(castSlot,null,'touch input is blocked during dialogue');
 innerWidth=390;innerHeight=844;assert(!touch.active(),'portrait pauses combat input');
 console.log('Touch stick direction, targeting, skill dispatch and cinematic input guards passed.');
+
+await import('./iron.mjs');

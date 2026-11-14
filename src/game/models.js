@@ -78,3 +78,14 @@ export const PROFILES = {
 
 // ponytail: locally available rigs stand in for the six planned Mixamo downloads; replace file names when those assets are imported.
 PROFILES.stag={file:'warrior_pc',map:{...ZOMBIE,Idle:'ax_idle',Running_A:'ax_run',attack:['ax_combo',0.1,0.9,0.4],leap:'ax_leap',Spellcast_Raise:'ax_cry'}};
+
+// Human armies share already loaded rigs; each role has its own readable attack timing.
+const SOLDIER={Idle:'idle_shield',Idle_B:'idle_shield',Running_A:'ss_run',Running_B:'ss_run',Walking_A:'ss_run',Walking_Backwards:'walk_back',Hit_A:'ss_hit',Hit_B:'ss_hit',Death_A:'ss_death',Death_B:'ss_death',Taunt:'ss_powerup',attack:['ss_slash',.15,.8,.48]};
+PROFILES.rebel={file:'bram',map:SOLDIER};
+PROFILES.raider={file:'bram',map:{...SOLDIER,Idle:'ax_idle',Running_A:'ax_run',attack:['ax_horiz',.1,.85,.5]}};
+PROFILES.berserker={file:'warrior_pc',map:{...SOLDIER,Idle:'ax_idle',Running_A:'ax_run',attack:['ax_combo',.1,.8,.45]}};
+PROFILES.arbalist={file:'ranger_pc',builtinGear:[3],map:{...SOLDIER,Idle:'bow_idle',Running_A:'bow_run',attack:['bow_draw',.3,1,.95]}};
+PROFILES.assassin={file:'arissa',map:{...SOLDIER,Idle:'idle_plain',Running_A:'run',attack:['ss_power',.1,.8,.45]}};
+PROFILES.captain={file:'roland',map:SOLDIER};
+PROFILES.blackknight={file:'paladin_pc',builtinGear:[0,2,3],map:SOLDIER};
+PROFILES.ironking={file:'paladin_pc',builtinGear:[0,2,3],map:{...SOLDIER,attack:['ss_power',.1,.85,.5]}};

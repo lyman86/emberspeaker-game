@@ -1,3 +1,4 @@
+import {ironProp} from './iron-art.js';
 import * as THREE from 'three';
 import { episodeProp, episodeScenery, episodeGate } from './episode-scenery.js';
 
@@ -242,7 +243,7 @@ export class Level {
     // props
     for (const p of d.props) {
       const cx = p.x * CELL + 2 + (p.ox ?? 0), cz = p.z * CELL + 2 + (p.oz ?? 0);
-      const collides=p.collision!==false&&(RADIUS[p.prop]!=null||['box_large','boulder','log','stump','column','bed_floor','@wagon','@ruin','@butchery','@roots','@sign'].includes(p.prop));
+      const collides=p.collision!==false&&(RADIUS[p.prop]!=null||['box_large','boulder','log','stump','column','bed_floor','@wagon','@ruin','@butchery','@roots','@sign','@war_tent','@barricade','@iron_brazier','@war_table','@iron_throne'].includes(p.prop));
       if (p.prop[0] === '@') this._special(p, cx, cz);
       else if (PROP_MAP[p.prop]) {
         for (const e of [].concat(PROP_MAP[p.prop])) {
@@ -254,7 +255,7 @@ export class Level {
         }
       } else if (A.gltf.has(p.prop)) {add(p.prop, M(cx, p.oy ?? 0, cz, p.rot ?? 0, p.s ?? 1));if(collides)this.addModelCollider(p.prop,cx,cz,p.s??1,p.rot??0,p.prop);}
       if(collides&&(p.prop[0]==='@'||PROP_MAP[p.prop]?.m?.[0]==='@')){
-        const half=({'@house':[2.5,2.5],'@church':[2.5,2.5],'@mill':[2.5,2.5],'@wagon':[2.1,1.4],'@ruin':[2.8,.7],'@butchery':[1.5,.9]})[p.prop];
+        const half=({'@house':[2.5,2.5],'@church':[2.5,2.5],'@mill':[2.5,2.5],'@wagon':[2.1,1.4],'@ruin':[2.8,.7],'@butchery':[1.5,.9],'@war_tent':[3,2],'@barricade':[2.5,1.2],'@war_table':[1.8,1.1],'@iron_throne':[2.5,1.5]})[p.prop];
         if(half)this.addBox(cx,cz,half[0]*(p.s??1),half[1]*(p.s??1),p.rot??0,p.prop);
         else this.circles.push({x:cx,z:cz,r:(RADIUS[p.prop]??({'@roots':.6,'@sign':.2,column:.6})[p.prop]??1)*(p.s??1),prop:p.prop});
       }
@@ -314,6 +315,7 @@ export class Level {
   }
 
   _special(p, cx, cz) {
+    if(ironProp(this,p,cx,cz))return;
     if(episodeProp(this,p,cx,cz))return;
     const G = this.group, h = hash(p.x, p.z), MAT = this.game.materials, A = this.game.assets;
     const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.95, ...o });
@@ -404,6 +406,7 @@ export class Level {
   }
 
   dispose() {
+    this.group.traverse(o=>o.userData.ironDispose?.());
     const geometries=new Set(),materials=new Set();
     this.group.traverse((o) => { if (o.isInstancedMesh) o.dispose();if(o.userData.ep2Geometry)geometries.add(o.geometry);if(o.userData.ep2Material)materials.add(o.material); });
     for(const geo of geometries)geo.dispose();for(const mat of materials)mat.dispose();

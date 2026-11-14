@@ -88,7 +88,7 @@ export function meleeHit(game, pl, { range = 3, arc = 2.1, dmg, pal = 'steel', k
     game.particles.emit({ pos: hp, count: 8, speed: [2, 6], life: [0.3, 0.6], size: [0.15, 0.35], c0: [1.2, 0.08, 0.05], c1: [0.3, 0, 0], gravity: 14, dir: V(dx / (d || 1), 0.4, dz / (d || 1)), spread: 0.6 });
     hit.push(e);
   }
-  if (hit.length) { game.audio.play('hit', pl.pos, 0.9); game.hitStop(0.03); pl.onHit?.(hit.length); }
+  if (hit.length) { game.audio.play('hit', pl.pos, 0.9); game.hitStop(0.03); }
   return hit;
 }
 
