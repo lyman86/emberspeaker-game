@@ -365,19 +365,21 @@ export class UI {
   refreshShop() {
     const g = this.game, pl = g.player, S = this.el.shop, grid = S.querySelector('.grid');
     grid.innerHTML = '';
+    grid.classList.toggle('supply-grid',this.shopMode!=='smith');
     if (this.shopMode === 'apothecary'||['hunter','quartermaster'].includes(this.shopMode)) {
+      const supply=(icon,name,description,price,buy)=>{
+        const row=h('button','ware',`<span class="ico" aria-hidden="true">${icon}</span><span class="nm">${name}</span><span class="ds">${description}</span><span class="pr">${price} 金币</span>`);
+        row.type='button';row.onclick=buy;grid.appendChild(row);
+      };
       const potions = [['hp', '生命药水', 25, '回复 50% 生命'], ['mp', pl.C.res.name + '药水', 20, `回复 60% ${pl.C.res.name}`]];
-      for (const [k, n, price, desc] of potions) {
-        const d = h('div', 'ware', `<div class="ico">${potionIcon(k)}</div><div class="nm">${n}</div><div class="ds">${desc}</div><div class="pr">${price} 金币</div>`);
-        d.onclick = () => this.buyPotion(k, price, n);
-        grid.appendChild(d);
-      }
-      const bundle = h('div', 'ware', `<div class="ico">${potionIcon('hp')}</div><div class="nm">药剂礼包</div><div class="ds">生命药水 ×4，${pl.C.res.name}药水 ×2</div><div class="pr">110 金币</div>`);
-      bundle.onclick = () => { if (pl.gold < 110) return this._poor(); pl.gold -= 110; pl.potions.hp += 4; pl.potions.mp += 2; g.audio.play('coin'); this.toast('购买：药剂礼包'); g.save(); this.refreshBag(); };
-      grid.appendChild(bundle);
+      for(const [k,n,price,desc] of potions)supply(potionIcon(k),n,desc,price,()=>this.buyPotion(k,price,n));
+      supply(potionIcon('hp'),'药剂礼包',`生命药水 ×4，${pl.C.res.name}药水 ×2`,110,()=>{
+        if(pl.gold<110)return this._poor();pl.gold-=110;pl.potions.hp+=4;pl.potions.mp+=2;g.audio.play('coin');this.toast('购买：药剂礼包');g.save();this.refreshShop();this.refreshBag();
+      });
       if(['hunter','quartermaster'].includes(this.shopMode))for(const id of ['iron','soul']){
-        const m=MATERIALS[id],price=m.price*2,row=h('button','ware',`${m.name} · ${price} 金币`);
-        row.onclick=()=>{if(pl.gold<price)return this._poor();pl.gold-=price;pl.addMaterial(id);this.refreshShop();this.refreshBag();};grid.appendChild(row);
+        const m=MATERIALS[id],price=m.price*2;
+        const icon=id==='iron'?'<svg viewBox="0 0 40 40"><path d="m6 17 19-8 9 7-19 9z" fill="#b3b7b5" stroke="#d5c091"/><path d="M6 17v9l9 6v-7m0 7 19-9v-7" fill="#606c72" stroke="#b8aa85"/><path d="m12 16 12-5m-4 13 10-5" stroke="#e1e4df"/></svg>':'<svg viewBox="0 0 40 40"><path d="m20 4 11 13-4 15-10 4-9-15z" fill="#7464af" stroke="#c7b7ec"/><path d="m20 4-3 18 14-5m-14 5 10 10m-10-10v14l-9-15z" fill="#aa9ae0" stroke="#d7cef5"/></svg>';
+        supply(icon,m.name,'强化装备材料 ×1',price,()=>{if(pl.gold<price)return this._poor();pl.gold-=price;pl.addMaterial(id);g.audio.play('coin');g.save();this.refreshShop();this.refreshBag();});
       }
     } else {
       this._stock.forEach((it, i) => {
