@@ -22,7 +22,7 @@ import { Guidance } from './game/guidance.js';
 import {ironDamage} from './game/iron.js';
 import { bossDamage } from './game/stag.js';
 import { IronCampaign as Campaign } from './game/iron-campaign.js';
-import { rollDrop, makeItem, RARITY } from './game/items.js';
+import { rollDrop, makeItem, RARITY, BASES } from './game/items.js';
 import { visualKind } from './game/gear.js';
 
 const $ = (s) => document.querySelector(s);
@@ -201,6 +201,15 @@ class Game {
         this.player.castSlot(6,this.player.pos.clone().add(new THREE.Vector3(0,0,-7)));
       };document.querySelector('#qa-ultimate')?.remove();document.body.appendChild(replay);
     }
+    if(import.meta.env.DEV && params.get('qa')==='equipment'){
+      this.player.bag=Object.keys(BASES).map((base,i)=>makeItem(base,{ilvl:10,rarity:i%3===0?'rare':'common'}));
+      for(const base of ['chest','robe','leather','gloves','boots','helm','hood']){
+        this.player.bag.push(makeItem(base,{ilvl:10,rarity:'legendary'}));
+        if(['chest','gloves','boots','helm'].includes(base))this.player.equip[BASES[base].slot]=makeItem(base,{ilvl:10});
+      }
+      this.player.recalc();this.player.refreshGear();this.ui.toggleBag();
+    }
+    if(import.meta.env.DEV && params.get('qa')==='supplies')this.ui.openShop(['hunter','quartermaster','apothecary','smith'].includes(params.get('shop'))?params.get('shop'):'hunter');
     if(import.meta.env.DEV && params.get('qa')==='forge'){this.ui.openShop('smith');this.ui.openGrowth('forge');}
     if (save || import.meta.env.DEV && params.has('qa')) {
       this.ui.fade(false);
