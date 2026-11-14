@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>烬语者 · 午夜钟声与腐林疫歌</title>
+  <link rel="stylesheet" href="/src/style.css" />
+  <link rel="stylesheet" href="/src/mobile.css" />
+</head>
+<body>
+  <canvas id="view"></canvas>
+  <div id="vignette"></div>
+  <div id="hurt"></div>
+  <div id="dmg"></div>
+
+  <div id="hud" class="hidden">
+    <div id="target" class="hidden"><div class="name"></div><div class="bar"><i></i></div></div>
+    <div id="quest"><h4>任务</h4><div class="title"></div><div class="desc"></div></div>
+    <div id="plate">
+      <div class="crest"><div class="emb" id="pemb"></div><b id="plvl">1</b></div>
+      <div class="pinfo">
+        <div class="pname"><span id="pname">战士</span><small id="ptitle"></small></div>
+        <div class="purse"><i class="coin"></i><b id="gold">0</b><small>金币</small></div>
+        <div class="pbtns">
+          <button id="bagbtn" data-tip="背包与角色|查看装备、属性，整理背包|I / B"><svg viewBox="0 0 24 24"><path d="M8 7V5.5A4 4 0 0 1 16 5.5V7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 8h15l-1.2 12.5H5.7z" fill="currentColor" opacity=".9"/><path d="M9 12h6" stroke="#0008" stroke-width="1.6"/></svg><span>背包</span><kbd>I</kbd></button>
+          <button id="menubtn" data-tip="菜单|暂停游戏、查看按键、保存并退出|Esc"><svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14" stroke="currentColor" stroke-width="2"/></svg><span>菜单</span><kbd>Esc</kbd></button>
+        </div>
+      </div>
+    </div>
+    <div id="bottom">
+      <div class="orbwrap"><div class="orb hp" data-tip="生命|归零即倒下。按 1 使用生命药水"><i id="hpfill"></i><em id="shieldfill"></em><div class="glass"></div><b id="hptext"></b></div></div>
+      <div id="mid">
+        <div id="skills"></div>
+        <div id="xp" data-tip="经验"><i></i><span id="lvl">等级 1</span></div>
+      </div>
+      <div class="orbwrap"><div class="orb mp" data-tip="资源"><i id="mpfill"></i><div class="glass"></div><b id="mptext"></b></div></div>
+    </div>
+    <div id="hint"></div>
+  </div>
+
+  <div id="labels"></div>
+  <div id="toast"></div>
+  <div id="bagpanel" class="panel hidden">
+    <div class="head"><h3>角色与背包</h3><span class="close">×</span></div>
+    <div class="body">
+      <div class="left"><div class="equip"><div class="doll"></div></div><div class="stats"></div></div>
+      <div class="right"><div class="grid"></div><div class="goldline"><i class="coin"></i><b>0</b> 金币</div><div class="hint"></div></div>
+    </div>
+  </div>
+  <div id="shoppanel" class="panel hidden">
+    <div class="head"><h3>商店</h3><span class="close">×</span></div>
+    <div class="grid"></div>
+    <div class="foot">你的金币：<b class="gold">0</b></div>
+  </div>
+  <div id="tooltip" class="hidden"></div>
+  <div id="select" class="hidden">
+    <div class="logo">烬语者</div>
+    <div class="cards"></div>
+    <div class="detail"></div>
+  </div>
+  <div id="prompt" class="hidden"></div>
+
+  <div id="dialogue" class="hidden">
+    <div class="speaker"></div>
+    <div class="text"></div>
+    <div class="next">点击 / 空格 继续 ▸</div>
+  </div>
+
+  <div id="banner" class="hidden"><div class="big"></div><div class="small"></div></div>
+
+  <div id="death" class="hidden">
+    <h1>你已倒下</h1>
+    <p>灰烬尚未熄灭。</p>
+    <button id="respawn">重新站起</button>
+  </div>
+
+  <div id="pause" class="hidden">
+    <h2>暂停</h2>
+    <table>
+      <tr><td>鼠标左键</td><td>移动 / 对话 / 拾取 / 攻击（按住连发）</td></tr>
+      <tr><td>Shift + 左键</td><td>原地施放主攻击</td></tr>
+      <tr><td>鼠标右键</td><td>第二技能</td></tr>
+      <tr><td>Q / W / E</td><td>技能（2 / 3 / 4 级习得）</td></tr>
+      <tr><td>空格</td><td>位移技能</td></tr>
+      <tr><td>1 / 2</td><td>生命药水 / 能量药水</td></tr>
+      <tr><td>I / B</td><td>角色与背包</td></tr>
+      <tr><td>M</td><td>静音</td></tr>
+      <tr><td>Esc</td><td>暂停 / 继续</td></tr>
+    </table>
+    <div id="qualrow">画质：<button data-q="high" class="small">高</button><button data-q="mid" class="small">中</button><button data-q="low" class="small">低</button></div>
+    <button id="resume">继续游戏</button>
+    <button id="quit" class="small">保存并返回标题</button>
+  </div>
+
+  <div id="fade"></div>
+  <div id="story" class="hidden"><div class="lines"></div><div class="skip">点击继续</div></div>
+
+  <div id="loading">
+    <div class="logo">烬语者</div>
+    <div class="sub">EMBERSPEAKER</div>
+    <div class="ep">第一幕 · 钟声苏醒</div>
+    <div class="progress"><i></i></div>
+    <div class="status">正在唤醒灰烬…</div>
+    <button id="start" class="hidden">开始游戏</button>
+    <div class="tip">建议使用 Chrome / Edge 并佩戴耳机</div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

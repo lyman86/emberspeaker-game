@@ -1,0 +1,466 @@
+{
+  "sfx": {
+    "firebolt": {
+      "files": [
+        "firebolt_0.mp3",
+        "firebolt_1.mp3"
+      ],
+      "gain": 0.55,
+      "wet": 0.2,
+      "pitch": 0.06
+    },
+    "fireball": {
+      "files": [
+        "fireball_0.mp3",
+        "fireball_1.mp3"
+      ],
+      "gain": 0.8,
+      "wet": 0.2,
+      "pitch": 0.06
+    },
+    "hitfire": {
+      "files": [
+        "hitfire_0.mp3",
+        "hitfire_1.mp3"
+      ],
+      "gain": 0.6,
+      "wet": 0.2,
+      "pitch": 0.06
+    },
+    "explosion": {
+      "files": [
+        "explosion_0.mp3",
+        "explosion_1.mp3",
+        "explosion_2.mp3"
+      ],
+      "gain": 0.9,
+      "wet": 0.35,
+      "pitch": 0.06
+    },
+    "nova": {
+      "files": [
+        "nova_0.mp3",
+        "nova_1.mp3"
+      ],
+      "gain": 0.85,
+      "wet": 0.4,
+      "pitch": 0.06
+    },
+    "shatter": {
+      "files": [
+        "shatter_0.mp3",
+        "shatter_1.mp3"
+      ],
+      "gain": 0.6,
+      "wet": 0.2,
+      "pitch": 0.06
+    },
+    "lightning": {
+      "files": [
+        "lightning_0.mp3",
+        "lightning_1.mp3"
+      ],
+      "gain": 0.8,
+      "wet": 0.35,
+      "pitch": 0.06
+    },
+    "meteorfall": {
+      "files": [
+        "meteorfall_0.mp3"
+      ],
+      "gain": 0.8,
+      "wet": 0.2,
+      "pitch": 0.02
+    },
+    "meteorhit": {
+      "files": [
+        "meteorhit_0.mp3",
+        "meteorhit_1.mp3"
+      ],
+      "gain": 1.0,
+      "wet": 0.45,
+      "pitch": 0.06
+    },
+    "blink": {
+      "files": [
+        "blink_0.mp3",
+        "blink_1.mp3"
+      ],
+      "gain": 0.6,
+      "wet": 0.2,
+      "pitch": 0.06
+    },
+    "hit": {
+      "files": [
+        "hit_0.mp3",
+        "hit_1.mp3"
+      ],
+      "gain": 0.45,
+      "wet": 0.2,
+      "pitch": 0.12
+    },
+    "hurt": {
+      "files": [
+        "hurt_0.mp3",
+        "hurt_1.mp3",
+        "hurt_2.mp3"
+      ],
+      "gain": 0.7,
+      "wet": 0.2,
+      "pitch": 0.06
+    },
+    "swing": {
+      "files": [
+        "swing_0.mp3",
+        "swing_1.mp3"
+      ],
+      "gain": 0.45,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "rattle": {
+      "files": [
+        "rattle_0.mp3",
+        "rattle_1.mp3",
+        "rattle_2.mp3"
+      ],
+      "gain": 0.55,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "bonedeath": {
+      "files": [
+        "bonedeath_0.mp3",
+        "bonedeath_1.mp3",
+        "bonedeath_2.mp3"
+      ],
+      "gain": 0.65,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "awaken": {
+      "files": [
+        "awaken_0.mp3",
+        "awaken_1.mp3"
+      ],
+      "gain": 0.6,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "darkbolt": {
+      "files": [
+        "darkbolt_0.mp3",
+        "darkbolt_1.mp3"
+      ],
+      "gain": 0.55,
+      "wet": 0.2,
+      "pitch": 0.06
+    },
+    "arrow": {
+      "files": [
+        "arrow_0.mp3",
+        "arrow_1.mp3"
+      ],
+      "gain": 0.5,
+      "wet": 0.2,
+      "pitch": 0.06
+    },
+    "coin": {
+      "files": [
+        "coin_0.mp3"
+      ],
+      "gain": 0.4,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "potion": {
+      "files": [
+        "potion_0.mp3",
+        "potion_1.mp3"
+      ],
+      "gain": 0.6,
+      "wet": 0.2,
+      "pitch": 0.06
+    },
+    "pickup": {
+      "files": [
+        "pickup_0.mp3"
+      ],
+      "gain": 0.45,
+      "wet": 0.2,
+      "pitch": 0.06
+    },
+    "chest": {
+      "files": [
+        "chest_0.mp3"
+      ],
+      "gain": 0.7,
+      "wet": 0.2,
+      "pitch": 0.02
+    },
+    "gate": {
+      "files": [
+        "gate_0.mp3"
+      ],
+      "gain": 0.8,
+      "wet": 0.4,
+      "pitch": 0.02
+    },
+    "levelup": {
+      "files": [
+        "levelup_0.mp3",
+        "levelup_1.mp3"
+      ],
+      "gain": 0.6,
+      "wet": 0.2,
+      "pitch": 0
+    },
+    "bell": {
+      "files": [
+        "bell_0.mp3",
+        "bell_1.mp3"
+      ],
+      "gain": 0.9,
+      "wet": 0.9,
+      "pitch": 0.02
+    },
+    "roar": {
+      "files": [
+        "roar_0.mp3",
+        "roar_1.mp3"
+      ],
+      "gain": 1.0,
+      "wet": 0.5,
+      "pitch": 0.04
+    },
+    "bonespike": {
+      "files": [
+        "bonespike_0.mp3",
+        "bonespike_1.mp3",
+        "bonespike_2.mp3"
+      ],
+      "gain": 0.75,
+      "wet": 0.2,
+      "pitch": 0.06
+    },
+    "summon": {
+      "files": [
+        "summon_0.mp3"
+      ],
+      "gain": 0.8,
+      "wet": 0.6,
+      "pitch": 0.02
+    },
+    "crow": {
+      "files": [
+        "crow_0.mp3",
+        "crow_1.mp3"
+      ],
+      "gain": 0.35,
+      "wet": 0.6,
+      "pitch": 0.06
+    },
+    "drip": {
+      "files": [
+        "drip_0.mp3"
+      ],
+      "gain": 0.35,
+      "wet": 1.0,
+      "pitch": 0.15
+    },
+    "e_claw": {
+      "files": [
+        "e_claw_0.mp3",
+        "e_claw_1.mp3"
+      ],
+      "gain": 0.55,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "e_hit": {
+      "files": [
+        "e_hit_0.mp3",
+        "e_hit_1.mp3"
+      ],
+      "gain": 0.6,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "e_throw": {
+      "files": [
+        "e_throw_0.mp3"
+      ],
+      "gain": 0.5,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "e_summon": {
+      "files": [
+        "e_summon_0.mp3"
+      ],
+      "gain": 0.85,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "e_blink": {
+      "files": [
+        "e_blink_0.mp3"
+      ],
+      "gain": 0.7,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "e_spikes": {
+      "files": [
+        "e_spikes_0.mp3"
+      ],
+      "gain": 0.8,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "warcry": {
+      "files": [
+        "warcry_0.mp3"
+      ],
+      "gain": 0.9,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "raise": {
+      "files": [
+        "raise_0.mp3"
+      ],
+      "gain": 0.8,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "corpseburst": {
+      "files": [
+        "corpseburst_0.mp3"
+      ],
+      "gain": 0.85,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "legendary": {
+      "files": [
+        "legendary_0.mp3"
+      ],
+      "gain": 0.9,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "raredrop": {
+      "files": [
+        "raredrop_0.mp3"
+      ],
+      "gain": 0.7,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "itemdrop": {
+      "files": [
+        "itemdrop_0.mp3"
+      ],
+      "gain": 0.5,
+      "wet": 0.2,
+      "pitch": 0.1
+    },
+    "e_villager": {
+      "files": [
+        "episode2/villager_groan.m4a"
+      ],
+      "gain": 0.48,
+      "wet": 0.2,
+      "pitch": 0.07
+    },
+    "e_goblin": {
+      "files": [
+        "episode2/goblin_chitter.m4a"
+      ],
+      "gain": 0.5,
+      "wet": 0.2,
+      "pitch": 0.07
+    },
+    "e_wolf": {
+      "files": [
+        "episode2/wolf_snarl.m4a"
+      ],
+      "gain": 0.7,
+      "wet": 0.2,
+      "pitch": 0.07
+    },
+    "e_witch": {
+      "files": [
+        "episode2/witch_chant.m4a"
+      ],
+      "gain": 0.48,
+      "wet": 0.2,
+      "pitch": 0.07
+    },
+    "e_butcher": {
+      "files": [
+        "episode2/butcher_roar.m4a"
+      ],
+      "gain": 0.8,
+      "wet": 0.2,
+      "pitch": 0.07
+    },
+    "e_poison": {
+      "files": [
+        "episode2/poison_cast.m4a"
+      ],
+      "gain": 0.5,
+      "wet": 0.2,
+      "pitch": 0.07
+    },
+    "e_roots": {
+      "files": [
+        "episode2/root_crack.m4a"
+      ],
+      "gain": 0.65,
+      "wet": 0.2,
+      "pitch": 0.07
+    }
+  },
+  "amb": {
+    "amb_wind": {
+      "file": "amb_wind.mp3",
+      "gain": 0.5
+    },
+    "amb_fire": {
+      "file": "amb_fire.mp3",
+      "gain": 0.22
+    },
+    "amb_cave": {
+      "file": "amb_cave.mp3",
+      "gain": 0.55
+    },
+    "amb_forest": {
+      "file": "episode2/forest_bed.m4a",
+      "gain": 0.38
+    },
+    "amb_swamp": {
+      "file": "episode2/swamp_bed.m4a",
+      "gain": 0.34
+    },
+    "amb_mill": {
+      "file": "episode2/mill_bed.m4a",
+      "gain": 0.26
+    }
+  },
+  "music": {
+    "mus_camp": {
+      "file": "mus_camp.mp3",
+      "gain": 0.45
+    },
+    "mus_crypt": {
+      "file": "mus_crypt.mp3",
+      "gain": 0.5
+    },
+    "mus_boss": {
+      "file": "mus_boss.mp3",
+      "gain": 0.55
+    }
+  }
+}

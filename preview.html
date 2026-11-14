@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>模型预览</title>
+<style>html,body{margin:0;background:#222;color:#ddd;font:13px sans-serif;overflow:hidden}#ui{position:fixed;top:8px;left:8px;z-index:2}select,button{font-size:13px}</style></head>
+<body><div id="ui"><select id="clip"></select> <button id="pause">暂停</button> <span id="t"></span></div>
+<script type="module">
+// Dev preview: every Mixamo character side by side, playing the chosen clip from the shared library.
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+const NAMES = (new URLSearchParams(location.search).get('chars') || 'player,warrior_pc,paladin_pc,ranger_pc,necro_pc,arissa,roland,bram,vera,minion').split(',');
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(innerWidth, innerHeight); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true; document.body.appendChild(r.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x2a2a30);
+scene.add(new THREE.HemisphereLight(0xbcc8ff, 0x302820, 2.4));
+const sun = new THREE.DirectionalLight(0xffeedd, 2.5); sun.position.set(4, 8, 6); sun.castShadow = true; scene.add(sun);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 10), new THREE.MeshStandardMaterial({ color: 0x555555 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+const cam = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.1, 200); cam.position.set(0, 2.2, 11);
+const ctl = new OrbitControls(cam, r.domElement); ctl.target.set(0, 1, 0);
+const L = new GLTFLoader(), base = './assets/mx/';
+const lib = await L.loadAsync(base + 'anims.glb');
+const sel = document.querySelector('#clip');
+for (const c of lib.animations) sel.add(new Option(c.name, c.name));
+sel.value = new URLSearchParams(location.search).get('clip') || 'idle';
+const mixers = [];
+await Promise.all(NAMES.map(async (n, i) => {
+  const g = await L.loadAsync(base + n + '.glb');
+  g.scene.position.x = (i - (NAMES.length - 1) / 2) * 1.6;
+  g.scene.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+  scene.add(g.scene);
+  mixers.push(new THREE.AnimationMixer(g.scene));
+}));
+let paused = false, fixedT = null;
+const play = () => { for (const m of mixers) { m.stopAllAction(); m.clipAction(lib.animations.find((c) => c.name === sel.value)).play(); } };
+sel.onchange = play; play();
+document.querySelector('#pause').onclick = () => (paused = !paused);
+window.setT = (frac) => { const c = lib.animations.find((c) => c.name === sel.value); for (const m of mixers) m.setTime(c.duration * frac); fixedT = frac; r.render(scene, cam); };
+window.setClip = (n) => { sel.value = n; play(); };
+window.ready = true;
+const clock = new THREE.Clock();
+(function loop() { requestAnimationFrame(loop); const dt = clock.getDelta(); if (!paused && fixedT === null) for (const m of mixers) m.update(dt); ctl.update(); r.render(scene, cam); })();
+</script></body></html>
