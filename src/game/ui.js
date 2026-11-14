@@ -240,7 +240,7 @@ export class UI {
 
   refreshStats() { if (!this.el.bag.classList.contains('hidden')) this.refreshBag(); }
 
-  icon(it) { return `<img class="gi" draggable="false" src="${this.game.gear.icon(it)}">${it.stars?`<b class="itemstars">${'★'.repeat(it.stars)}</b>`:''}`; }
+  icon(it) { return `<img class="gi" alt="${BASES[it.base]?.name??'装备'}" draggable="false" src="${this.game.gear.icon(it)}">${it.stars?`<b class="itemstars">${'★'.repeat(it.stars)}</b>`:''}`; }
 
   refreshBag() {
     const pl = this.game.player, P = this.el.bag;

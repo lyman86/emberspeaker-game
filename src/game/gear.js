@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { inventoryModel } from './inventory-art.js';
 import { BASES, RARITY } from './items.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 
@@ -551,7 +552,7 @@ export class Gear {
   _iconSetup() {
     if (this.iconR) return;
     this.iconR = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-    this.iconR.setSize(128, 128, false);
+    this.iconR.setSize(192, 192, false);
     this.iconR.toneMapping = THREE.ACESFilmicToneMapping;
     this.iconR.toneMappingExposure = 1.45;
     this.iconR.outputColorSpace = THREE.SRGBColorSpace;
@@ -569,22 +570,26 @@ export class Gear {
     const key = [it.base, it.rarity, itemVariant(it), it.legendary ?? ''].join('|');
     if (this.icons.has(key)) return this.icons.get(key);
     this._iconSetup();
-    const m = this.model(it);
+    const K=this._look(it);
+    const full=inventoryModel(it,{...K,steel:this.metal(it.rarity==='legendary'?'silver':'steel'),sole:this.leather(0x18171b),
+      cloth:it.base==='robe'?this.cloth(it.rarity==='common'?0x41656c:it.rarity==='magic'?0x3f4e83:0x693b59):K.cloth,
+      leather:this.leather(it.rarity==='common'?0x815c39:0x503a2b)});
+    const m=full??this.model(it);
     const kind = visualKind(it), b = BASES[it.base];
     // pose for a readable silhouette
     if (b.slot === 'weapon') m.rotation.set(0.25, -0.5, kind === 'bow' || kind === 'crossbow' ? -0.6 : -0.75);
     else if (kind === 'shield') m.rotation.set(0.1, -0.35, 0);
+    else if (it.base==='boots') m.rotation.set(.12,-.95,-.08);
+    else if (it.base==='gloves') m.rotation.set(.1,-.22,-.12);
+    else if (b.slot==='chest') m.rotation.set(.1,-.28,-.04);
     else if (kind === 'helm' || kind === 'hood') m.rotation.set(0.15, 0.6, 0);
-    else if (kind === 'pauldron') m.rotation.set(0.5, -0.5, 0.2);
-    else if (kind === 'bracer' || kind === 'greave') m.rotation.set(0.3, 0.5, -0.5);
     else if (kind === 'quiver' || kind === 'relic') m.rotation.set(0.2, 0.5, -0.3);
     else m.rotation.set(0.25, 0.4, 0);
     const holder = new THREE.Group(); holder.add(m); this.iconScene.add(holder);
     holder.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(m), c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
     holder.position.sub(c);
-    let r = Math.max(sz.x, sz.y) * 0.5 + 0.0001;
-    if (b.slot === 'weapon' && kind !== 'sword' && kind !== 'wand') { const tip = new THREE.Vector3(0, 1.3, 0); m.localToWorld(tip); holder.position.sub(tip.sub(c).multiplyScalar(0.28)); r *= 0.78; }
+    const r = Math.max(sz.x, sz.y) * 0.5 + 0.0001;
     const cam = this.iconCam;
     cam.position.set(0, 0, (r / Math.tan(THREE.MathUtils.degToRad(11))) * 1.08 + sz.z * 0.5);
     cam.lookAt(0, 0, 0);
@@ -594,6 +599,7 @@ export class Gear {
     for (const mt of mats) mt.envMapIntensity = mt.userData.envI;
     const url = this.iconR.domElement.toDataURL('image/png');
     this.iconScene.remove(holder);
+    m.userData.disposeIcon?.();
     this.icons.set(key, url);
     return url;
   }
