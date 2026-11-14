@@ -92,3 +92,18 @@ body.touch .skill-slot[data-slot="2"] .skill-upgrade{left:-25px;top:14px;transfo
 body.touch #select .select-stage-caption{left:166px;right:304px;bottom:16px;font-size:11px;letter-spacing:3px;}
 body.touch #quest{top:calc(98px + env(safe-area-inset-top));}body.touch .player-ailment{top:calc(81px + env(safe-area-inset-top));padding:1px 4px;}
 @media(max-width:740px) and (orientation:landscape){body.touch .touch-vitals{width:125px;}body.touch #target{left:55%;width:210px;}body.touch #target .name,body.touch #target.boss .name{font-size:12px;}body.touch .boss-details{font-size:9px;}body.touch #quest{width:185px;}body.touch #route-guide{max-width:26vw;}body.touch #select .select-header>b{font-size:8px;}}
+
+/* Supplies use readable cards rather than the equipment slot grid. */
+body.touch #shoppanel { display:flex; flex-direction:column; max-height:calc(100dvh - 20px); overflow:hidden; }
+body.touch #shoppanel .grid { flex:0 1 auto; min-height:0; overflow-y:auto; touch-action:pan-y; padding:10px; }
+body.touch #shoppanel .grid.supply-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+body.touch #shoppanel .ware { min-height:84px; padding:8px; grid-template-columns:30px minmax(0,1fr); gap:2px 7px; background:#0c1a14; border-color:#71816c55; }
+body.touch #shoppanel .ware .ico svg { width:30px; height:30px; }
+body.touch #shoppanel .ware .nm { font-size:13px; }
+body.touch #shoppanel .ware .ds { font-size:10px; }
+body.touch #shoppanel .ware .pr { font-size:12px; }
+body.touch #shoppanel .foot { padding:8px 10px 0; font-size:12px; }
+@media(max-width:740px) and (orientation:landscape) {
+  body.touch #shoppanel .grid.supply-grid { grid-template-columns:minmax(0,1fr); }
+  body.touch #shoppanel .ware { min-height:76px; }
+}
