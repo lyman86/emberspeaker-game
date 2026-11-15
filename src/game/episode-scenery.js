@@ -3,6 +3,7 @@ const hash=(x,z)=>{const s=Math.sin(x*127.1+z*311.7)*43758.5453;return s-Math.fl
 
 /** Locally authored dressing uses the existing CC0 scanned wood/stone materials. */
 export function episodeProp(lv,p,x,z) {
+  if(!['@wagon','@ruin','@ritual','@butchery','@roots','@sign'].includes(p.prop))return false;
   const mat=lv.game.materials,group=new THREE.Group();group.position.set(x,0,z);group.rotation.y=p.rot??0;
   const owned=(color,more={})=>new THREE.MeshStandardMaterial({color,roughness:0.85,...more});
   const wood=mat.get('wood'),bark=mat.get('bark'),stone=mat.get('mossy');

@@ -112,6 +112,7 @@ export class Decals {
       if (!level.isFloor(cx, cz)) continue;
       const c = level.center(cx, cz), x = c.x + rnd(-1.8, 1.8), z = c.z + rnd(-1.8, 1.8);
       const r = Math.random();
+      if(level.spec.episode===4){if(r<.65)this._add('crack',x,z,rnd(1.5,3));continue;}
       if (outdoor) { if (r < 0.55) this._add('grime', x, z, rnd(2.5, 5)); else if (r < 0.85) this._add('moss', x, z, rnd(2, 4)); else this._add('blood', x, z, rnd(1, 1.8)); }
       else if (r < 0.4) this._add('grime', x, z, rnd(2.5, 5)); else if (r < 0.7) this._add('crack', x, z, rnd(1.6, 3.2)); else if (r < 0.85) this._add('moss', x, z, rnd(1.5, 3)); else this._add('blood', x, z, rnd(1.2, 2.2));
     }

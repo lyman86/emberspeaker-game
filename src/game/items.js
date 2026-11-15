@@ -44,7 +44,7 @@ export const BASES = {
 
 /** Material tiers by item level — just flavour names on top of the base. */
 const TIERS = [
-  [1, '破旧的'], [3, '铁制'], [5, '精钢'], [7, '秘银'], [10, '黑铁'], [13, '王庭精钢'],
+  [1, '破旧的'], [3, '铁制'], [5, '精钢'], [7, '秘银'], [10, '黑铁'], [13, '王庭精钢'], [15, '盐晶锻造'],
 ];
 const tierName = (lvl) => TIERS.filter(([l]) => lvl >= l).pop()[1];
 
@@ -74,6 +74,10 @@ export const AFFIXES = {
  * They only drop in the field (elites, bosses, rare chance from normal monsters at higher levels).
  */
 export const LEGENDARIES = [
+  {id:'saltmantle',name:'避风者的盐纱',base:'robe',flag:'saltmantle',episode:4,power:'盐沙风暴造成的伤害降低 35%，可与避风护符叠加。'},
+  {id:'sunseal',name:'碎日指环',base:'ring',flag:'sunseal',episode:4,power:'对共鸣盐晶伤害提高 80%；对减速或冻结目标伤害提高 20%。'},
+  {id:'desertgrip',name:'拾荒者的晶握',base:'gloves',flag:'desertgrip',episode:4,power:'击碎共鸣盐晶时回复 8% 最大生命与 15 点职业资源。'},
+
   {id:'siegebreaker',name:'破阵者之握',base:'gloves',flag:'siegebreaker',episode:3,power:'对战旗和重弩伤害提高 60%；控制破盾后，5 秒内造成的伤害提高 15%。'},
   {id:'ironmarch',name:'铁行军靴',base:'boots',flag:'ironmarch',episode:3,power:'击杀铁冠敌人后，4 秒内移动速度提高 18%，受到的伤害降低 10%。'},
   {id:'ironseal',name:'废王印玺',base:'ring',flag:'ironseal',episode:3,power:'持续攻击同一目标，每第三次主动命中追加本次伤害的 60%（冷却 2 秒）。'},

@@ -56,27 +56,54 @@ export class GameAudio {
 
   /** Recorded sounds: manifest = { sfx: { name: { files: [...], gain } }, amb: {...}, music: {...} } */
   async loadOverrides() {
-    const base = import.meta.env.BASE_URL + 'audio/';
-    let man;
-    try {
-      const res = await fetch(base + 'manifest.json');
-      if (!res.ok || !(res.headers.get('content-type') || '').includes('json')) return;
-      man = await res.json();
-    } catch { return; }
-    this.manifest = man;
-    const load = async (f) => this.ctx.decodeAudioData(await (await fetch(base + f)).arrayBuffer());
-    // short effects first so combat sounds are ready quickly; loops and music afterwards
-    await Promise.all(Object.entries(man.sfx ?? {}).map(async ([name, e]) => {
-      try { this.overrides[name] = { bufs: await Promise.all(e.files.map(load)), gain: e.gain ?? 1, wet: e.wet ?? 0.2, pitch: e.pitch ?? 0.06 }; } catch (err) { console.warn('audio', name, err); }
+    this.loops ??= {};this.pending ??= new Map();
+    this._manifestPromise ??= (async()=>{
+      try {const r=await fetch(import.meta.env.BASE_URL+'audio/manifest.json');if(r.ok)this.manifest=await r.json();}
+      catch(err){console.warn('Audio manifest unavailable; using synthesized audio.',err);}
+      return this.manifest??{};
+    })();
+    return this._manifestPromise;
+  }
+
+  async loadSound(name) {
+    if(!this.ctx||this.overrides[name])return;
+    await this.loadOverrides();
+    const e=this.manifest?.sfx?.[name];if(!e)return;
+    const key='sfx:'+name;
+    if(!this.pending.has(key))this.pending.set(key,(async()=>{
+      try {
+        const bufs=await Promise.all(e.files.map(f=>this._file(f)));
+        if(!name.startsWith('e_')||!['e_villager','e_goblin','e_wolf','e_witch','e_butcher','e_poison','e_roots'].includes(name)||this.episode===2)
+          this.overrides[name]={bufs,gain:e.gain??1,wet:e.wet??.2,pitch:e.pitch??.06};
+      }catch(err){console.warn('audio',name,err);}
+    })().finally(()=>this.pending.delete(key)));
+    return this.pending.get(key);
+  }
+
+  async _file(file) {
+    const r=await fetch(import.meta.env.BASE_URL+'audio/'+file);if(!r.ok)throw new Error('Audio '+r.status);
+    return this.ctx.decodeAudioData(await r.arrayBuffer());
+  }
+
+  async loadMood() {
+    if(!this.ctx)return;await this.loadOverrides();
+    await Promise.all(this._wanted().map(async name=>{
+      if(this.loops[name])return;
+      const key='loop:'+name,e=this.manifest?.amb?.[name]??this.manifest?.music?.[name];if(!e)return;
+      if(!this.pending.has(key))this.pending.set(key,(async()=>{
+        try{const buf=await this._file(e.file);if(this._wanted().includes(name))this.loops[name]={buf,gain:e.gain??1,group:name.startsWith('mus_')?'music':'amb'};this._applyLoops();}
+        catch(err){console.warn('audio',name,err);}
+      })().finally(()=>this.pending.delete(key)));
+      await this.pending.get(key);
     }));
-    this.loops = {};
-    // ambience first, then music; whatever the current mood needs is loaded ahead of the rest
-    const want = this._wanted();
-    const all = ['amb', 'music'].flatMap((group) => Object.entries(man[group] ?? {}).map(([name, e]) => ({ name, e, group })));
-    all.sort((a, b) => (want.includes(b.name) - want.includes(a.name)) || (a.group === 'amb' ? -1 : 1));
-    for (const { name, e, group } of all) {
-      try { this.loops[name] = { buf: await load(e.file), gain: e.gain ?? 1, group }; this._applyLoops(); } catch (err) { console.warn('audio', name, err); }
-    }
+    for(const name of Object.keys(this.loops))if(!this._wanted().includes(name))delete this.loops[name];
+  }
+
+  async prepare(mood,episode) {
+    this.episode=episode;this.setMood(mood);
+    const plague=['e_villager','e_goblin','e_wolf','e_witch','e_butcher','e_poison','e_roots'];
+    if(episode!==2)for(const name of plague)delete this.overrides[name];
+    await Promise.all([this.loadMood(),...['hit','hurt','swing','coin','potion','pickup',...(episode===2?plague:[])].map(name=>this.loadSound(name))]);
   }
 
   /** Start / cross-fade the recorded ambience and music for the current mood. */
@@ -101,7 +128,7 @@ export class GameAudio {
   }
 
   _wanted() {
-    return { iron:['amb_wind','amb_fire','mus_crypt'],fortress:['amb_cave','amb_fire','mus_crypt'],iron_boss:['amb_fire','mus_boss'],camp: ['amb_wind', 'amb_fire', 'mus_camp'], crypt: ['amb_cave', 'mus_crypt'], boss: ['amb_cave', 'mus_boss'],forest:['amb_forest','mus_crypt'],swamp:['amb_swamp','mus_crypt'],mill:['amb_forest','amb_mill','mus_crypt'],plague_boss:['amb_swamp','mus_boss'], none: [] }[this.mood] ?? [];
+    return { salt:['amb_wind','mus_crypt'],salt_tomb:['amb_cave','mus_crypt'],salt_boss:['amb_wind','mus_boss'],iron:['amb_wind','amb_fire','mus_crypt'],fortress:['amb_cave','amb_fire','mus_crypt'],iron_boss:['amb_fire','mus_boss'],camp: ['amb_wind', 'amb_fire', 'mus_camp'], crypt: ['amb_cave', 'mus_crypt'], boss: ['amb_cave', 'mus_boss'],forest:['amb_forest','mus_crypt'],swamp:['amb_swamp','mus_crypt'],mill:['amb_forest','amb_mill','mus_crypt'],plague_boss:['amb_swamp','mus_boss'], none: [] }[this.mood] ?? [];
   }
 
   /** True while a recorded music track is playing (the generative score then stays silent). */
@@ -221,6 +248,7 @@ export class GameAudio {
     }
     vol *= 0.9 + Math.random() * 0.2;
     if (HEAVY.has(name)) this._thump(Math.min(1.2, vol), this.sfx);
+    if(!this.overrides[name])this.loadSound(name);
     const o = this.overrides[name];
     if (o) {
       const s = this.ctx.createBufferSource(); s.buffer = o.bufs[(Math.random() * o.bufs.length) | 0];
@@ -263,6 +291,7 @@ export class GameAudio {
     this.wind.g.gain.setTargetAtTime((mood === 'camp' ? 0.2 : mood === 'none' ? 0 : 0.05) * synthAmb, t, 1.2);
     this.rumble.g.gain.setTargetAtTime((mood === 'crypt' || mood === 'boss' ? 0.5 : 0.12) * synthAmb, t, 1.2);
     this._applyLoops();
+    this.loadMood();
     this._bar = 0; this._beat = 0;
     this._nextBar = t + 0.4; this._nextBeat = t + 0.4;
   }

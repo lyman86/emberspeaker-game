@@ -5,9 +5,9 @@ import {Level} from '../src/game/level.js';
 import {LEVELS} from '../src/game/maps.js';
 const root='public/assets/';
 function bounds(name){let file=name.startsWith('ph:')?'ph/'+name.slice(3)+'.glb':'props/'+name+'.glb';assert(fs.existsSync(root+file),'missing collision asset '+file);const b=fs.readFileSync(root+file);const j=JSON.parse(b.toString('utf8',20,20+b.readUInt32LE(12))),box=new T.Box3();const walk=(i,parent)=>{const n=j.nodes[i],m=n.matrix?new T.Matrix4().fromArray(n.matrix):new T.Matrix4().compose(new T.Vector3(...(n.translation??[0,0,0])),new T.Quaternion(...(n.rotation??[0,0,0,1])),new T.Vector3(...(n.scale??[1,1,1])));m.premultiply(parent);if(n.mesh!=null)for(const p of j.meshes[n.mesh].primitives){const a=j.accessors[p.attributes.POSITION];if(a.min&&a.max)box.union(new T.Box3(new T.Vector3(...a.min),new T.Vector3(...a.max)).applyMatrix4(m));}for(const c of n.children??[])walk(c,m);};for(const n of j.scenes[j.scene??0].nodes)walk(n,new T.Matrix4());return box;}
-const cache=new Map(),mat=new T.MeshStandardMaterial();const A={parts:()=>[],prop:()=>new T.Group(),bounds(name){if(!cache.has(name))cache.set(name,bounds(name));return cache.get(name);},gltf:{has:n=>fs.existsSync(root+'props/'+n+'.glb')}};
+const cache=new Map(),mat=new T.MeshStandardMaterial();const A={parts:()=>[],prop:()=>new T.Group(),bounds(name){if(!cache.has(name))cache.set(name,bounds(name));return cache.get(name);},gltf:{values:()=>[],has:n=>fs.existsSync(root+'props/'+n+'.glb')}};
 for(const [id,f]of Object.entries(LEVELS)){
- const g={assets:A,materials:{get:()=>mat,tex:{rock_surface:{nor:null}}},low:true,player:{pos:new T.Vector3()},gfx:{addShake(){}},audio:{play(){}}};
+ const g={assets:A,materials:{cache:{shared:mat},get:()=>mat,tex:{rock_surface:{nor:null}}},low:true,player:{pos:new T.Vector3()},gfx:{addShake(){}},audio:{play(){}}};
  const warn=console.warn;console.warn=()=>{};
  const lv=new Level(g,f()),d=lv.def;g.level=lv;
  for(const gate of Object.values(lv.gates)){const from=lv.center(gate.x,gate.z+1),to=lv.center(gate.x,gate.z-1);if(!lv.blocked(from.x,from.z,.6)&&!lv.blocked(to.x,to.z,.6)){assert(!lv.clear(from.x,from.z,to.x,to.z,.6),'closed gate must block sweep');const landing=lv.displacement(from,to,.6);assert(landing.distanceTo(to)>4,'displacement crossed gate');}lv.solidGrid[gate.z*lv.w+gate.x]=0;gate.open=true;}

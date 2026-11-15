@@ -5,6 +5,9 @@ import * as THREE from 'three';
  * arm = ambient occlusion (R), roughness (G), metalness (B).
  */
 export const PBR_SETS = {
+  saltSand:{id:'brown_mud_rocks_01',tint:0xd6c49b,pom:.02},
+  saltStone:{id:'monastery_stone_floor',tint:0xe0d5bb,pom:.035},
+  saltWall:{id:'medieval_blocks_02',tint:0xc4bc9f},
   dirt: { id: 'brown_mud_rocks_01', pom: 0.05 },
   forestFloor:{id:'forest_leaves_02',tint:0xa1a48a,pom:0.025},
   leaves: { id: 'dry_decay_leaves', tint: 0x9a8f86, pom: 0.035 },
@@ -27,18 +30,31 @@ export class Materials {
     this.maxAniso = renderer.capabilities.getMaxAnisotropy();
   }
 
-  async load(onProgress) {
-    const ids = [...new Set(Object.values(PBR_SETS).map((s) => s.id))];
+  async load(names, onProgress) {
+    const ids = [...new Set(names.map(name => PBR_SETS[name].id))];
     const base = import.meta.env.BASE_URL + 'assets/pbr/';
     let done = 0;
-    this.tex = {};
+    this.tex ??= {};this.pending ??= new Map();
     await Promise.all(ids.map(async (id) => {
+      if(this.tex[id]){onProgress?.(++done/ids.length);return;}
+      if(!this.pending.has(id))this.pending.set(id,(async()=>{
       const [diff, nor, arm] = await Promise.all(['diff', 'nor', 'arm'].map((m) => this.loader.loadAsync(`${base}${id}/${m}.jpg`)));
       diff.colorSpace = THREE.SRGBColorSpace;
       for (const t of [diff, nor, arm]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = Math.min(8, this.maxAniso); }
       this.tex[id] = { diff, nor, arm };
+      })().finally(()=>this.pending.delete(id)));
+      await this.pending.get(id);
       onProgress?.(++done / ids.length);
     }));
+    onProgress?.(1);
+  }
+
+  retain(names) {
+    const keep=new Set(names.map(name=>PBR_SETS[name].id));
+    for(const [key,m] of Object.entries(this.cache))if(!keep.has(PBR_SETS[key.split(':')[0]].id)){
+      for(const v of Object.values(m))if(v?.isTexture)v.dispose();m.dispose();delete this.cache[key];
+    }
+    for(const [id,textures] of Object.entries(this.tex))if(!keep.has(id)){for(const t of Object.values(textures))t.dispose();delete this.tex[id];}
   }
 
   /** Shared material for a named set. repeat = texture repeats per geometry UV unit. */
@@ -54,6 +70,13 @@ export class Materials {
     });
     m.normalScale.set(1.2, 1.2);
     if (S.pom && this.pom !== false) addParallax(m, S.pom);
+    if(name==='saltSand'){
+      const before=m.onBeforeCompile;
+      m.onBeforeCompile=sh=>{before(sh);sh.fragmentShader=sh.fragmentShader.replace('#include <alphamap_fragment>',`#include <alphamap_fragment>
+        float saltLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+        diffuseColor.rgb=vec3(.25,.265,.25)+saltLuma*vec3(1.65,1.59,1.4);`);};
+      m.customProgramCacheKey=()=> 'salt-sand-'+(this.pom!==false);
+    }
     return (this.cache[key] = m);
   }
 }

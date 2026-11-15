@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { saltUpdate,saltPoise } from './salt.js';
+import { dressSaltEnemy } from './salt-art.js';
 import { plagueUpdate, poisonPool, addStagCrown, addTotem } from './encounters.js';
 import {ironUpdate,ironPoise,hasStandard} from './iron.js';
 import {dressIronEnemy} from './iron-art.js';
@@ -11,6 +13,14 @@ import { PALETTE } from './fx.js';
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 export const ENEMY_TYPES = {
+  saltdead:{model:'warrior',name:'盐壳行尸',hp:920,dmg:[38,53],speed:4.1,range:2.6,cd:1.7,xp:230,atkSpeed:1.4,gold:[22,35],episode:4},
+  sandweaver:{model:'mage',name:'沙匠',hp:820,dmg:[42,57],speed:4.5,range:23,keep:15,ranged:true,proj:'ice',cd:2.8,xp:270,atkSpeed:1.5,gold:[25,39],episode:4},
+  saltfiend:{model:'elite',name:'蓝皮盐魔',hp:1750,dmg:[51,70],speed:6.2,range:3.3,cd:1.7,xp:330,atkSpeed:1.5,scale:1.12,gold:[30,48],episode:4},
+  tombguard:{model:'warrior',name:'盐墓守卫',hp:1400,dmg:[47,64],speed:4.8,range:3.2,cd:1.5,xp:280,atkSpeed:1.5,scale:1.1,gold:[26,42],episode:4},
+  saltseal:{model:'mage',name:'共鸣盐晶',hp:950,dmg:[0,0],speed:0,range:0,cd:99,xp:130,atkSpeed:1,radius:.9,gold:[15,20],episode:4},
+  saltpriest:{model:'boss',name:'封尸祭司 · 纳赫',hp:11000,dmg:[65,85],speed:3.8,range:20,cd:2.5,xp:1200,atkSpeed:1.3,scale:1.25,radius:.9,boss:true,tough:true,gold:[260,340],episode:4},
+  saltqueen:{model:'saltqueen',name:'盐之女王 · 瑟芮娅',hp:36000,dmg:[78,105],speed:4.3,range:22,cd:2.5,xp:2500,atkSpeed:1.4,scale:1.6,radius:1,boss:true,tough:true,gold:[650,850],episode:4},
+
   rebel:{model:'rebel',name:'叛军盾卒',hp:620,dmg:[32,43],speed:4.7,range:2.7,cd:1.6,xp:115,atkSpeed:1.5,gold:[15,24],episode:3},
   raider:{model:'raider',name:'铁冠掠夺者',hp:490,dmg:[38,50],speed:6.2,range:2.7,cd:1.4,xp:110,atkSpeed:1.6,gold:[16,25],episode:3},
   arbalist:{model:'arbalist',name:'王庭弩手',hp:400,dmg:[29,39],speed:4.5,range:26,keep:17,ranged:true,proj:'arrow',cd:3,xp:125,atkSpeed:1.4,gold:[16,27],episode:3},
@@ -62,14 +72,15 @@ export class Enemy extends Actor {
     else this.play(T.boss ? 'Idle_B' : 'Idle');
     if(T.episode===2){this.tintBase=new THREE.Color(0.005,0.015,0.001);this.tint=this.tintBase;this._dirty=true;dressPlagueEnemy(this);}
     if(T.episode===3)dressIronEnemy(this);
+    if(T.episode===4)dressSaltEnemy(this);
     if(type==='stag')addStagCrown(this);if(type==='totem')addTotem(this);
     if (T.boss) { this.phase = 1; this.summons = 0; this.bossT = 2; }
   }
 
   voice() {if(this.T.episode===3)return 'warcry';return ({villager:'e_villager',goblin:'e_goblin',werewolf:'e_wolf',witch:'e_witch',butcher:'e_butcher',stag:'e_wolf'})[this.type]??'rattle';}
-  dispose(){this.ironArtDispose?.();this.plagueArtDispose?.();const geos=new Set();for(const o of this.encounterArt??[]){o.traverse(m=>{if(m.geometry)geos.add(m.geometry);});o.removeFromParent();}for(const geo of geos)geo.dispose();for(const mat of this.encounterMaterials??[])mat.dispose();super.dispose();}
+  dispose(){this.saltArtDispose?.();this.ironArtDispose?.();this.plagueArtDispose?.();const geos=new Set();for(const o of this.encounterArt??[]){o.traverse(m=>{if(m.geometry)geos.add(m.geometry);});o.removeFromParent();}for(const geo of geos)geo.dispose();for(const mat of this.encounterMaterials??[])mat.dispose();super.dispose();}
 
-  stun(sec) { if(this.T.episode===3&&this.T.boss){ironPoise(this,Math.min(.8,sec*.6));return;}if(this.type==='stag'&&this.alive){stagPoise(this,Math.min(.75,sec*.5));return;}if (!this.alive || this.state === 'dormant' || this.T.boss) return; this.stagger = Math.max(this.stagger, this.T.tough ? sec * 0.4 : sec); if (this.state === 'attack') this.state = 'chase'; this.play('Hit_A', { once: true, restart: true, speed: 0.8, fade: 0.05 }); }
+  stun(sec) { if(this.T.episode===4&&this.T.boss){saltPoise(this,Math.min(.75,sec*.45));return;}if(this.T.episode===3&&this.T.boss){ironPoise(this,Math.min(.8,sec*.6));return;}if(this.type==='stag'&&this.alive){stagPoise(this,Math.min(.75,sec*.5));return;}if (!this.alive || this.state === 'dormant' || this.T.boss) return; this.stagger = Math.max(this.stagger, this.T.tough ? sec * 0.4 : sec); if (this.state === 'attack') this.state = 'chase'; this.play('Hit_A', { once: true, restart: true, speed: 0.8, fade: 0.05 }); }
 
   slowFor(sec) { if (!this.alive) return; this.slow = Math.max(this.slow, sec); this.tint = new THREE.Color(0.05, 0.25, 0.04); }
 
@@ -78,6 +89,7 @@ export class Enemy extends Actor {
 
   freeze(sec) {
     if (!this.alive) return;
+    if(this.T.episode===4&&this.T.boss)saltPoise(this,Math.min(.5,sec*.3));
     if(this.T.episode===3&&this.T.boss)ironPoise(this,Math.min(.4,sec*.2));
     if(this.type==='stag')stagPoise(this,Math.min(.35,sec*.15));
     if (this.T.tough) { this.slow = Math.max(this.slow, sec * 1.2); }
@@ -87,7 +99,7 @@ export class Enemy extends Actor {
 
   takeDamage(v, { from, knock = 0, quiet = false, stun = 0 } = {}) {
     if (!this.alive || this.invulnerable) return false;
-    if(this.asleep&&this.T.boss){this.game.story.onTrigger(({stag:'stag_intro',blackknight:'knight_intro',ironking:'king_intro'})[this.type]??'boss_intro');return false;}
+    if(this.asleep&&this.T.boss){this.game.story.onTrigger(({stag:'stag_intro',blackknight:'knight_intro',ironking:'king_intro',saltpriest:'priest_intro',saltqueen:'queen_intro'})[this.type]??'boss_intro');return false;}
     this.hp -= v;
     this.flash(1);
     this.lastHit = { from: from ? from.clone?.() ?? { ...from } : null, knock, v, quiet };
@@ -198,6 +210,7 @@ export class Enemy extends Actor {
     const dx = pl.pos.x - this.pos.x, dz = pl.pos.z - this.pos.z, dist = Math.max(0.01, Math.hypot(dx, dz));
     const active = pl.alive && !g.cinematic;
 
+    if(active&&saltUpdate(this,this.T.boss?dt:edt,dist)){this.mixer.timeScale=ts;this.updateVisual(dt,9);return true;}
     if(active&&ironUpdate(this,this.T.boss?dt:edt,dist)){this.mixer.timeScale=ts;this.updateVisual(dt,9);return true;}
     if (active && plagueUpdate(this,this.type==='stag'?dt:edt,dist)){this.mixer.timeScale=this.type==='stag'?1:ts;this.updateVisual(dt,9);return true;}
     if (this.state === 'dormant') {
@@ -270,7 +283,7 @@ export class Enemy extends Actor {
         trail: (dt, pr) => { if (Math.random() < 0.5) g.particles.emit({ pos: pr.pos, count: 1, speed: [0, 0.3], life: [0.15, 0.3], size: [0.15, 0.3], c0: [0.5, 0.5, 0.45], c1: [0.1, 0.1, 0.1] }); },
         onHit: (hit, pos) => { if (hit) { hit.hurt(dmg*(hasStandard(this)?1.25:1), pos); g.audio.play('e_hit', pos); } g.particles.emit({ pos, count: 6, speed: [1, 4], life: [0.2, 0.4], size: [0.12, 0.3], c0: PALETTE.bone.hot, c1: PALETTE.bone.cool, gravity: 8 }); } });
     } else {
-      const pal=T.proj==='poison'?'poison':'dark';
+      const pal=T.proj==='poison'?'poison':T.proj==='ice'?'ice':'dark';
       g.audio.play(T.proj==='poison'?'e_poison':'darkbolt', this.pos);
       g.particles.emit({ pos: from, count: 8, speed: [1, 4], life: [0.2, 0.5], size: [0.3, 0.7], c0: PALETTE.dark.core, c1: PALETTE.dark.cool });
       shoot(g, { team: 'enemy', pos: from, vel: dir.multiplyScalar(15 * speedMul), pal, size: 0.3 * Math.min(1.5, this.scale), r: 0.6, light: 40, life: 3.2,

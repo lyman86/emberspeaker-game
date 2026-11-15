@@ -124,7 +124,7 @@ export class Player extends Actor {
 
   onHit(n) { if (this.stats.lifeHit) this.heal(this.stats.lifeHit * n, true); }
 
-  onKill(e) { if(e?.T.episode===3&&this.has('ironmarch'))this.buff('ironmarch',4,{}); if (this.has('gravewalker')) this.buff('gravewalker', 3, {}); }
+  onKill(e) { if(e?.type==='saltseal'&&this.has('desertgrip')){this.heal(this.maxHp*.08);this.gainRes(15);} if(e?.T.episode===3&&this.has('ironmarch'))this.buff('ironmarch',4,{}); if (this.has('gravewalker')) this.buff('gravewalker', 3, {}); }
 
   /** Holy aegis: hexagonal light bubble with a rotating rune circle at the feet and drifting motes. */
   showShield(on) {

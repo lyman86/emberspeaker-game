@@ -1,3 +1,4 @@
+import {saltProp,saltScenery} from './salt-art.js';
 import {ironProp} from './iron-art.js';
 import * as THREE from 'three';
 import { episodeProp, episodeScenery, episodeGate } from './episode-scenery.js';
@@ -13,7 +14,7 @@ const RADIUS = { '@house':2.8,'@church':2.8,'@mill':2.8,'@well':1.5, pillar: 1.1
   trunk_large_A: 1.0, barrel_small_stack: 1.5, '@grave': 0.75, '@tree': 0.8, '@campfire': 1.5, '@bell': 2.4, statue: 1.3, cabinet: 1.2 };
 
 /** Old map prop names -> photo-scanned replacements (scale in world units per metre; '@' = procedural). */
-const PROP_MAP = {
+export const PROP_MAP = {
   crates_stacked: [{ m: 'wooden_crate_01', s: 1.7 }, { m: 'wooden_crate_01', s: 1.6, y: 0.57, rot: 0.35 }, { m: 'wooden_crate_02', s: 1.5, ox: 0.6, oz: 0.9, rot: 1.4 }],
   barrel_large: [{ m: 'wine_barrel_01', s: 1.7 }, { m: 'wine_barrel_01', s: 1.6, ox: 1.1, oz: 0.4, rot: 2 }],
   keg: [{ m: 'wine_barrel_01', s: 1.8 }, { m: 'wooden_bucket_01', s: 1.6, ox: 1.1, oz: -0.5 }],
@@ -201,7 +202,7 @@ export class Level {
         continue;
       }
       const kind = { ',': 'dirt', ';': 'leaves', ':': 'altarFloor', '~':'mossy' }[ch] ?? 'stoneFloor';
-      (floors[this.id==='forest'&&kind==='leaves'?'forestFloor':kind] ??= []).push(M(cx, 0, cz, Math.floor(h * 4) * (Math.PI / 2)));
+      (floors[this.spec.episode===4?(kind==='dirt'?'saltSand':'saltStone'):this.id==='forest'&&kind==='leaves'?'forestFloor':kind] ??= []).push(M(cx, 0, cz, Math.floor(h * 4) * (Math.PI / 2)));
     }
 
     // floor: one instanced quad per cell with photo-scanned PBR material (random 90° turns hide tiling)
@@ -213,7 +214,7 @@ export class Level {
       this.group.add(im);
     }
     // walls: solid blocks with masonry sides and rough rock tops
-    const wallMat = MAT.get(outdoor ? 'wall' : 'cryptWall', 1.5), topMat = MAT.get('rockTop', 1.5);
+    const wallMat = MAT.get(this.spec.episode===4?'saltWall':outdoor ? 'wall' : 'cryptWall', 1.5), topMat = MAT.get(this.spec.episode===4?'saltStone':'rockTop', 1.5);
     const mkBoxes = (list, hgt) => {
       if (!list.length) return;
       const geo = new THREE.BoxGeometry(CELL, hgt, CELL);
@@ -238,12 +239,13 @@ export class Level {
           branches.setMatrixAt(i*6+j,new THREE.Matrix4().compose(pos,q,new THREE.Vector3(1,len,1)));
         }
       });trunks.castShadow=branches.castShadow=true;this.group.add(trunks,branches);
-    } else if(this.id!=='swamp'){mkBoxes(tallBoxes, 4.6);mkBoxes(lowBoxes, 0.9);}
+    } else if(this.id==='saltflat'){mkBoxes([...tallBoxes,...lowBoxes],1.3);}
+    else if(this.id!=='swamp'){mkBoxes(tallBoxes, 4.6);mkBoxes(lowBoxes, 0.9);}
 
     // props
     for (const p of d.props) {
       const cx = p.x * CELL + 2 + (p.ox ?? 0), cz = p.z * CELL + 2 + (p.oz ?? 0);
-      const collides=p.collision!==false&&(RADIUS[p.prop]!=null||['box_large','boulder','log','stump','column','bed_floor','@wagon','@ruin','@butchery','@roots','@sign','@war_tent','@barricade','@iron_brazier','@war_table','@iron_throne'].includes(p.prop));
+      const collides=p.collision!==false&&(RADIUS[p.prop]!=null||['box_large','boulder','log','stump','column','bed_floor','@wagon','@ruin','@butchery','@roots','@sign','@war_tent','@barricade','@iron_brazier','@war_table','@iron_throne','@salt_crystal','@salt_obelisk','@salt_ruin','@salt_brazier','@salt_archive'].includes(p.prop));
       if (p.prop[0] === '@') this._special(p, cx, cz);
       else if (PROP_MAP[p.prop]) {
         for (const e of [].concat(PROP_MAP[p.prop])) {
@@ -255,9 +257,9 @@ export class Level {
         }
       } else if (A.gltf.has(p.prop)) {add(p.prop, M(cx, p.oy ?? 0, cz, p.rot ?? 0, p.s ?? 1));if(collides)this.addModelCollider(p.prop,cx,cz,p.s??1,p.rot??0,p.prop);}
       if(collides&&(p.prop[0]==='@'||PROP_MAP[p.prop]?.m?.[0]==='@')){
-        const half=({'@house':[2.5,2.5],'@church':[2.5,2.5],'@mill':[2.5,2.5],'@wagon':[2.1,1.4],'@ruin':[2.8,.7],'@butchery':[1.5,.9],'@war_tent':[3,2],'@barricade':[2.5,1.2],'@war_table':[1.8,1.1],'@iron_throne':[2.5,1.5]})[p.prop];
+        const half=({'@house':[2.5,2.5],'@church':[2.5,2.5],'@mill':[2.5,2.5],'@wagon':[2.1,1.4],'@ruin':[2.8,.7],'@butchery':[1.5,.9],'@war_tent':[3,2],'@barricade':[2.5,1.2],'@war_table':[1.8,1.1],'@salt_ruin':[3,.9],'@salt_archive':[1.5,1.2],'@iron_throne':[2.5,1.5]})[p.prop];
         if(half)this.addBox(cx,cz,half[0]*(p.s??1),half[1]*(p.s??1),p.rot??0,p.prop);
-        else this.circles.push({x:cx,z:cz,r:(RADIUS[p.prop]??({'@roots':.6,'@sign':.2,column:.6})[p.prop]??1)*(p.s??1),prop:p.prop});
+        else this.circles.push({x:cx,z:cz,r:(RADIUS[p.prop]??({'@salt_crystal':1.1,'@salt_obelisk':1.1,'@salt_brazier':.8,'@roots':.6,'@sign':.2,column:.6})[p.prop]??1)*(p.s??1),prop:p.prop});
       }
     }
 
@@ -295,7 +297,7 @@ export class Level {
       this.solidGrid[gt.z * this.w + gt.x] = 1;
       this.gates[gt.id] = { ...gt, mesh: m, open: false };
     }
-    episodeScenery(this);
+    episodeScenery(this);saltScenery(this);
   }
 
   openGate(id) {
@@ -315,6 +317,7 @@ export class Level {
   }
 
   _special(p, cx, cz) {
+    if(saltProp(this,p,cx,cz))return;
     if(ironProp(this,p,cx,cz))return;
     if(episodeProp(this,p,cx,cz))return;
     const G = this.group, h = hash(p.x, p.z), MAT = this.game.materials, A = this.game.assets;
@@ -406,9 +409,17 @@ export class Level {
   }
 
   dispose() {
-    this.group.traverse(o=>o.userData.ironDispose?.());
+    this.group.traverse(o=>{o.userData.ironDispose?.();o.userData.saltDispose?.();});
+    const sharedGeometry=new Set(),sharedMaterial=new Set(Object.values(this.game.materials.cache));
+    if(this.game.decals){sharedGeometry.add(this.game.decals.geo);for(const list of Object.values(this.game.decals.mats))for(const m of list)sharedMaterial.add(m);}
+    for(const g of this.game.assets.gltf.values())g.scene.traverse(o=>{if(o.geometry)sharedGeometry.add(o.geometry);for(const m of [].concat(o.material??[]))sharedMaterial.add(m);});
     const geometries=new Set(),materials=new Set();
-    this.group.traverse((o) => { if (o.isInstancedMesh) o.dispose();if(o.userData.ep2Geometry)geometries.add(o.geometry);if(o.userData.ep2Material)materials.add(o.material); });
+    this.group.traverse(o=>{
+      for(let p=o;p&&p!==this.group;p=p.parent)if(p.userData.saltDispose||p.userData.ironDispose)return;
+      if(o.isInstancedMesh)o.dispose();
+      if(o.geometry&&!sharedGeometry.has(o.geometry))geometries.add(o.geometry);
+      for(const m of [].concat(o.material??[]))if(!sharedMaterial.has(m))materials.add(m);
+    });
     for(const geo of geometries)geo.dispose();for(const mat of materials)mat.dispose();
     this.group.removeFromParent();
   }

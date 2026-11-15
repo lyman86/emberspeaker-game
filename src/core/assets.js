@@ -18,18 +18,14 @@ export class Assets {
     this.loader = new GLTFLoader();
   }
 
-  async loadAll(onProgress) {
-    const files = [...new Set(Object.values(PROFILES).map((p) => p.file))];
-    const jobs = [
-      ['mx/anims.glb', 'mx:anims'],
-      ...files.map((f) => ['mx/' + f + '.glb', 'mx:' + f]),
-      ...WEAPONS.map((n) => ['weapons/' + n + '.gltf', n]),
-      ...PROPS.map((n) => ['props/' + n + '.glb', n]),
-      ...PH_PROPS.map((n) => ['ph/' + n + '.glb', 'ph:' + n]),
-    ];
+  async load(names, onProgress) {
+    this.pending ??= new Map();
+    const jobs = [...new Set(names)].filter(name => !this.gltf.has(name));
     let done = 0;
     await Promise.all(
-      jobs.map(async ([url, name]) => {
+      jobs.map(async (name) => {
+        if (!this.pending.has(name)) this.pending.set(name, (async () => {
+        const url = name.startsWith('mx:') ? 'mx/'+name.slice(3)+'.glb' : name.startsWith('ph:') ? 'ph/'+name.slice(3)+'.glb' : WEAPONS.includes(name) ? 'weapons/'+name+'.gltf' : 'props/'+name+'.glb';
         const g = await this.loader.loadAsync(BASE + url);
         const mx = name.startsWith('mx:') || name.startsWith('ph:');
         g.scene.traverse((o) => {
@@ -43,9 +39,24 @@ export class Assets {
           }
         });
         this.gltf.set(name, g);
+        })().finally(() => this.pending.delete(name)));
+        await this.pending.get(name);
         onProgress?.(++done / jobs.length);
       })
     );
+    onProgress?.(1);
+  }
+
+  /** Called only after outgoing actors/instances are disposed. Browser HTTP cache still supports revisits. */
+  retain(names) {
+    const keep = new Set(names);
+    for (const [name,g] of this.gltf) if (!keep.has(name)) {
+      const owned = new Set();
+      g.scene.traverse(o => { if(o.geometry) owned.add(o.geometry); for(const m of [].concat(o.material??[])){owned.add(m);for(const v of Object.values(m))if(v?.isTexture)owned.add(v);} });
+      for(const value of owned)value.dispose();
+      this.gltf.delete(name);
+    }
+    this._clips = {}; this._gs = {};
   }
 
   /** Model bounds share the exact transforms used by the rendered scanned props. */

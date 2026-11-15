@@ -19,9 +19,12 @@ import { CLASS_SKILLS } from './game/skills.js';
 import { UI } from './game/ui.js';
 import { TouchControls } from './game/touch.js';
 import { Guidance } from './game/guidance.js';
+import {saltDamage} from './game/salt.js';
 import {ironDamage} from './game/iron.js';
 import { bossDamage } from './game/stag.js';
-import { IronCampaign as Campaign } from './game/iron-campaign.js';
+import { SaltCampaign as Campaign } from './game/salt-campaign.js';
+import { MENU_RESOURCES, SHARED_MATERIALS, levelResources } from './game/resources.js';
+import { CHAPTERS, challengeSetup, prepareChallengePlayer, runSaveKey } from './game/runs.js';
 import { rollDrop, makeItem, RARITY, BASES } from './game/items.js';
 import { visualKind } from './game/gear.js';
 
@@ -30,7 +33,7 @@ const params = new URLSearchParams(location.search);
 const touchMode=params.has('touch')||matchMedia('(pointer:coarse)').matches;
 document.body.classList.toggle('touch',touchMode);
 const rnd = (a, b) => a + Math.random() * (b - a);
-const SAVE_KEY = (cls) => (import.meta.env.DEV && params.has('qa') ? 'emberspeaker.qa.' : 'emberspeaker.save.') + cls;
+const SAVE_KEY = cls => runSaveKey(cls,import.meta.env.DEV&&params.has('qa'));
 
 class Input {
   constructor(game) {
@@ -92,20 +95,10 @@ class Game {
   }
 
   async boot() {
-    const bar = $('#loading .progress i'), status = $('#loading .status');
-    try {
-      let a = 0, b = 0;
-      const prog = () => { bar.style.width = (a * 0.8 + b * 0.2) * 100 + '%'; };
-      await Promise.all([
-        this.assets.loadAll((p) => { a = p; prog(); }),
-        this.materials.load((p) => { b = p; prog(); }),
-        this.fx.load(),
-      ]);
-    } catch (err) {
-      console.error(err);
-      status.innerHTML = '素材加载失败。请先在项目目录运行 <b>npm run assets</b> 下载素材，然后刷新页面。';
-      return;
-    }
+    await this.loadResources('准备英雄大厅', async progress=>{
+      await Promise.all([this.assets.load(MENU_RESOURCES.models,p=>progress(p*.6)),this.materials.load(MENU_RESOURCES.materials),this.fx.load()]);
+      progress(1);
+    });
     this.particles = new Particles(this.gfx.scene, this.low ? 3000 : 7000, true, this.fx.tex.atlas);
     this.smoke = new Particles(this.gfx.scene, 1400, false, this.fx.tex.atlas, { lit: true });
     // fluid-simulated flipbooks (tools/bake-flipbooks.py)
@@ -114,20 +107,44 @@ class Game {
     this.blasts = new Particles(this.gfx.scene, this.low ? 80 : 200, true, this.fx.tex.flip_explosion, { flip: true });
     this.puffs = new Particles(this.gfx.scene, this.low ? 300 : 700, false, this.fx.tex.flip_smoke, { flip: true, lit: true });
     this.dusts = new Particles(this.gfx.scene, this.low ? 200 : 500, false, this.fx.tex.flip_dust, { flip: true, lit: true });
-    status.textContent = '余烬已燃。';
+    $('#loading .status').textContent = '余烬已燃。';
+    $('#loading').classList.remove('hidden');
     const btn = $('#start');
     btn.classList.remove('hidden');
     const go = () => {
       btn.removeEventListener('click', go);
       this.audio.init();
       $('#loading').classList.add('hidden');
-      if (params.has('cls')) this.begin(params.get('cls'), params.has('new'));
-      else this.ui.classSelect((cls, fresh) => this.begin(cls, fresh));
+      if (params.has('cls')) this.begin(['warrior','ranger','mage','paladin','necro'].includes(params.get('cls'))?params.get('cls'):'mage', params.has('new'), {mode:['chapter','boss'].includes(params.get('mode'))?params.get('mode'):'story',chapter:Math.max(1,Math.min(4,Number(params.get('chapter'))||1))});
+      else this.title();
     };
     btn.addEventListener('click', go);
     if (params.has('autostart')) go();
     this.loop();
   }
+
+  title() {
+    this.ui.modeSelect(selection=>this.ui.classSelect((cls,fresh)=>this.begin(cls,fresh,selection),selection));
+  }
+
+  async loadResources(title,work) {
+    const loading=$('#loading'),status=loading.querySelector('.status'),bar=loading.querySelector('.progress i'),button=$('#start');
+    loading.classList.remove('hidden');loading.querySelector('.ep').textContent=title;button.classList.add('hidden');
+    for(;;){
+      status.textContent='正在加载所需资源…';bar.style.width='0%';
+      try{await work(p=>{bar.style.width=Math.round(p*100)+'%';status.textContent=`正在加载所需资源 · ${Math.round(p*100)}%`;});break;}
+      catch(err){console.error(err);status.textContent='资源加载中断，请检查网络后重试。';button.textContent='重试加载';button.classList.remove('hidden');await new Promise(resolve=>button.addEventListener('click',resolve,{once:true}));button.classList.add('hidden');}
+    }
+    bar.style.width='100%';loading.classList.add('hidden');button.textContent='开始游戏';
+  }
+
+  finishRun() {
+    if(this.run.mode==='story'||this.runFinished)return;
+    this.runFinished=true;this.paused=true;this.ui.closePanels();
+    document.querySelector('#boss-prep')?.remove();this.ui.runResult(this.run,this.runElapsed??0,this.runDeaths??0);
+  }
+
+  returnToTitle(){this.save(true);location.href=location.pathname+(this.touchMode?'?touch=1':'');}
 
   /** Idle character for the class-select showcase. */
   _makeShowcaseActor(cls) {
@@ -137,8 +154,10 @@ class Game {
   }
 
   /** Start (or continue) a game as the chosen class. */
-  async begin(cls, fresh = false) {
-    const save = fresh ? null : this.loadSave(cls);
+  async begin(cls, fresh = false, selection = {mode:'story',chapter:1}) {
+    this.run={mode:selection.mode,chapter:selection.chapter};this.bossReady=selection.mode!=='boss';this.runElapsed=0;
+    const setup=selection.mode==='story'?null:challengeSetup(selection.mode,selection.chapter);
+    const save = fresh||setup ? null : this.loadSave(cls);
     this.player = new Player(this, cls);
     this.gfx.scene.add(this.player.root);
     this.story = new Campaign(this);
@@ -149,6 +168,7 @@ class Game {
     }
     this.ui.el.fade.classList.add('on');
     let startLevel=save?.level??'camp';
+    if(setup){this.story.stage=setup.stage;this.story.flags=setup.flags;prepareChallengePlayer(this.player,setup);startLevel=setup.map;}
     if(import.meta.env.DEV && params.has('qa')) {
       this.player.level=30;this.player.gold=10000;this.player.materials={iron:99,soul:99,star:99,bone:10,venom:10};
       this.player.skillRanks=Object.fromEntries(this.player.skills.map(s=>[s.id,s.slot===6?5:1]));
@@ -211,7 +231,14 @@ class Game {
     }
     if(import.meta.env.DEV && params.get('qa')==='supplies')this.ui.openShop(['hunter','quartermaster','apothecary','smith'].includes(params.get('shop'))?params.get('shop'):'hunter');
     if(import.meta.env.DEV && params.get('qa')==='forge'){this.ui.openShop('smith');this.ui.openGrowth('forge');}
-    if (save || import.meta.env.DEV && params.has('qa')) {
+    if(setup){
+      this.ui.fade(false);this.story.quest();this.ui.banner(CHAPTERS[setup.chapter-1].title,setup.mode==='boss'?'Boss 挑战 · 可先分配技能点':'关卡挑战 · 本次成长独立于故事');
+      if(setup.chapter===1&&setup.mode==='chapter'){this.markNpc('roland',true);this.ui.setQuest('午夜钟声','与守夜人队长 <b>罗兰</b>交谈，开始本集冒险。');}
+      $('#quit').textContent='结束挑战并返回标题';
+      if(setup.mode==='boss')this.ui.prepareBoss();
+    } else if(save?.story.stage==='intro'&&this.level.id==='camp'){
+      this.story.onStart();
+    } else if (save || import.meta.env.DEV && params.has('qa')) {
       this.ui.fade(false);
       this.audio.setMood(this.level.spec.audio);
       this.ui.setQuest(save?.quest?.[0] ?? '午夜钟声', save?.quest?.[1] ?? '');
@@ -231,7 +258,7 @@ class Game {
 
   /** Persist progress (debounced unless now=true). */
   save(now = false) {
-    if (!this.player || !this.story) return;
+    if (!this.player || !this.story || this.run?.mode!=='story') return;
     clearTimeout(this._saveT);
     const write = () => {
       const q = this.ui.el.quest;
@@ -244,6 +271,14 @@ class Game {
 
   // ------------------------------------------------------------------ levels
   async loadLevel(id, { silent = false } = {}) {
+    if(this.loadingLevel)return;this.loadingLevel=true;
+    const spec = LEVELS[id]();
+    if(this.run?.mode==='boss'){const c=CHAPTERS[this.run.chapter-1];spec.def.spawns=spec.def.spawns.filter(s=>s.type===c.boss);spec.def.npcs=[];spec.def.chests=[];spec.def.triggers=spec.def.triggers.filter(t=>['boss_intro','stag_intro','king_intro','queen_intro'].includes(t.id));spec.def.start={x:c.point[0],z:c.point[1]};}
+    const f=this.story.second,peaceful=id==='camp'&&['epilogue','done'].includes(this.story.stage);
+    spec.def.spawns=peaceful?[]:spec.def.spawns.filter(s=>!(s.tag==='boss'&&this.story.flags.bossDead||s.tag==='elite'&&this.story.flags.key||s.tag?.startsWith('totem_')&&f.totems.includes(s.tag)||s.tag==='butcher'&&f.butcher||s.tag==='stag'&&f.bossDead||this.story.skipSpawn(s)));
+    const needed=levelResources(spec,this.player.cls);
+    const wasCinematic=this.cinematic;this.cinematic=true;
+    await this.loadResources(spec.name,async progress=>{let a=0,b=0,c=0;const update=()=>progress(a*.65+b*.25+c*.1);await Promise.all([this.assets.load(needed.models,p=>{a=p;update();}),this.materials.load(needed.materials,p=>{b=p;update();}),this.audio.prepare(spec.audio,spec.episode??(['forest','swamp'].includes(id)?2:1)).then(()=>{c=1;update();})]);});
     if (!silent) { this.cinematic = true; await this.ui.fade(true); }
     for (const e of this.enemies) e.dispose();
     for (const a of this.allies) a.dispose();
@@ -255,25 +290,17 @@ class Game {
     // The reusable route mesh belongs to the game, not the outgoing map.
     this.guidance.trail.removeFromParent();this.guidance.tick=0;
     this.level?.dispose();
+    this.assets.retain(needed.models);this.materials.retain([...needed.materials,...SHARED_MATERIALS]);
     this.inside.clear();
     this.ui.prompt(null);
 
-    const spec = LEVELS[id]();
     const lv = (this.level = new Level(this, spec));
     this.gfx.scene.add(lv.group);
     this.decals.clear(); this.decals.scatter(lv);
     this.gfx.setMood(spec.mood);
     this.gfx.torches = lv.torches;
     const d = spec.def;
-    const peaceful = id === 'camp' && (this.story.stage === 'epilogue' || this.story.stage === 'done');
-    if (!peaceful) for (const s of d.spawns) {
-      if (s.tag === 'boss' && this.story.flags.bossDead) continue;
-      if (s.tag === 'elite' && this.story.flags.key) continue;
-      const f=this.story.second;
-      if(s.tag?.startsWith('totem_') && f.totems.includes(s.tag) || s.tag==='butcher' && f.butcher || s.tag==='stag' && f.bossDead)continue;
-      if(this.story.skipSpawn(s))continue;
-      this.spawnEnemy(s.type, s.x * CELL + 2, s.z * CELL + 2, s);
-    }
+    for(const spawn of d.spawns)this.spawnEnemy(spawn.type,spawn.x*CELL+2,spawn.z*CELL+2,spawn);
     for (const n of d.npcs) this._makeNpc(n);
     for (const c of d.chests) this._makeChest(c);
     const st = lv.center(d.start.x, d.start.z);
@@ -290,7 +317,7 @@ class Game {
       this.cinematic = false;
       this.ui.banner(spec.name, spec.sub);
     }
-    this.save();
+    this.cinematic=wasCinematic;this.loadingLevel=false;this.save();
   }
 
   spawnEnemy(type, x, z, opts = {}) {
@@ -498,9 +525,9 @@ class Game {
   }
 
   hurtEnemy(e, dmg, opts = {}) {
-    const multiplier=((e.markedUntil??0)>this.time?1.2:1)*(this.player.has('plagueband') && (e.slow>0||e.frozen>0)?1.2:1);
+    const multiplier=((e.markedUntil??0)>this.time?1.2:1)*((this.player.has('plagueband')||this.player.has('sunseal')) && (e.slow>0||e.frozen>0)?1.2:1);
     const v = typeof dmg === 'number' ? Math.round(dmg) : dmg.v, crit = typeof dmg === 'number' ? false : dmg.crit;
-    const final=ironDamage(e,bossDamage(e,Math.round(v*multiplier)*(this.player.buffs.siegebreaker?1.15:1),opts,this),opts,this);
+    const final=saltDamage(e,ironDamage(e,bossDamage(e,Math.round(v*multiplier)*(this.player.buffs.siegebreaker?1.15:1),opts,this),opts,this),opts,this);
     if (!e.takeDamage(final, opts)) { if (e.alive && e.invulnerable) this.ui.number({ x: e.pos.x, y: e.scale, z: e.pos.z }, '免疫', 'info'); return; }
     if(this.player.has('hookchain') && (this.player._hookCd??0)<=0 && e.alive && !e.T.tough && Math.random()<0.15){
       this.player._hookCd=3;e.stun(1);const dir=this.player.pos.clone().sub(e.pos).setY(0);if(dir.length()>2){dir.setLength(Math.min(3,dir.length()-2));this.level.move(e.pos,dir.x,dir.z,e.radius);}
@@ -521,7 +548,7 @@ class Game {
     const T = e.T, pl = this.player;
     if(e.tag!=='summon')pl.gainXp(T.xp);
     if(e.tag!=='summon' && e.type!=='totem'){
-      pl.addMaterial(T.episode===3?'insignia':T.episode===2?'venom':'bone',T.tough?3:1);
+      pl.addMaterial(T.episode===4?'salt':T.episode===3?'insignia':T.episode===2?'venom':'bone',T.tough?3:1);
       if(T.boss)pl.addMaterial('star');
       else if(T.tough)pl.addMaterial('soul',2);
       else if(Math.random()<0.45)pl.addMaterial('iron');
@@ -542,6 +569,7 @@ class Game {
   }
 
   onPlayerDeath() {
+    this.runDeaths=(this.runDeaths??0)+1;
     this.audio.setMood('none');
     this.after(1.6, () => this.ui.el.death.classList.remove('hidden'));
   }
@@ -553,9 +581,9 @@ class Game {
     this.projectiles = [];
     for (const e of this.enemies) {
       if (!e.alive) continue;
-      e.ironMove=null;e.ironCd=2;e.stagger=0;e.frozen=0;e.slow=0;
+      e.saltMinor=null;e.saltCd=2;e.ironMove=null;e.ironCd=2;e.stagger=0;e.frozen=0;e.slow=0;
       if (e.tag === 'summon') { e.dispose(); e.gone = true; continue; }
-      if (e.T.boss) { e.asleep = true; e.hp = e.maxHp; e.summons = 0; e.phase=1; e.stag=null;e.iron=null;e.ironMove=null;e.intent='';e.barkUntil=0; e.bossT=1.2; e.specialCd=2; e.queue=[]; e.invulnerable = false; e.state = 'idle'; e.pos.copy(e.home); }
+      if (e.T.boss) { e.asleep = true; e.hp = e.maxHp; e.summons = 0; e.phase=1; e.stag=null;e.iron=null;e.salt=null;e.ironMove=null;e.intent='';e.barkUntil=0; e.bossT=1.2; e.specialCd=2; e.queue=[]; e.invulnerable = false; e.state = 'idle'; e.pos.copy(e.home); }
       else if (e.state !== 'dormant' && e.state !== 'rising') { e.state = 'idle'; e.pos.copy(e.home); e.hp = e.maxHp; }
     }
     this.enemies = this.enemies.filter((e) => !e.gone);
@@ -581,7 +609,7 @@ class Game {
     let real = Math.min(0.05, this.clock.getDelta());
     if (!this.started) { if (this.ui.selecting) this.ui.updateSelect(real); return; }
     if(this.touchMode&&innerWidth<innerHeight){this.input.swallow();this.touch.reset();return;}
-    if (this.paused) { this.input.pressed.length = 0; return; }
+    if (this.paused||this.loadingLevel) { this.input.pressed.length = 0; return; }
     let dt = real;
     if (this.stopT > 0) { this.stopT -= real; dt = 0; }
     if (this.slowT > 0) { this.slowT -= real; dt *= this.slowScale; }
@@ -593,6 +621,7 @@ class Game {
 
   update(dt, real) {
     this.time += dt;
+    if(this.bossReady&&!this.cinematic&&!this.ui.inDialogue&&!this.runFinished)this.runElapsed=(this.runElapsed??0)+real;
     const pl = this.player, inp = this.input, lv = this.level;
     inp.update();
     this._handleInput(dt);
@@ -816,7 +845,7 @@ for (const btn of document.querySelectorAll('#qualrow button')) {
   });
 }
 $('#resume').addEventListener('click', () => { game.paused = false; $('#pause').classList.add('hidden'); });
-$('#quit').addEventListener('click', () => { game.save(true); location.reload(); });
+$('#quit').addEventListener('click', () => game.returnToTitle());
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Escape' && game.started && !game.ui.inDialogue && !game.ui.panelOpen) { game.paused = !game.paused; $('#pause').classList.toggle('hidden', !game.paused); game.clock.getDelta(); }
 });

@@ -89,3 +89,5 @@ PROFILES.assassin={file:'arissa',map:{...SOLDIER,Idle:'idle_plain',Running_A:'ru
 PROFILES.captain={file:'roland',map:SOLDIER};
 PROFILES.blackknight={file:'paladin_pc',builtinGear:[0,2,3],map:SOLDIER};
 PROFILES.ironking={file:'paladin_pc',builtinGear:[0,2,3],map:{...SOLDIER,attack:['ss_power',.1,.85,.5]}};
+
+PROFILES.saltqueen={file:'vera',scale:1.15,map:{Idle:'magic_idle',Idle_B:'magic_idle',Running_A:'run',Walking_A:'m_walk',Hit_A:'hit',Death_A:'fall_back',Death_B:'fall_back',attack:['cast2h',.25,.85,.5],Spellcast_Raise:'area',Spellcast_Summon:'summon'}};

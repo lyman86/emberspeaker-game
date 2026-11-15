@@ -107,3 +107,8 @@ body.touch #shoppanel .foot { padding:8px 10px 0; font-size:12px; }
   body.touch #shoppanel .grid.supply-grid { grid-template-columns:minmax(0,1fr); }
   body.touch #shoppanel .ware { min-height:76px; }
 }
+body.touch #select .mode-back{position:absolute;right:16px;top:11px;padding:8px 11px;font-size:10px;letter-spacing:0;min-height:34px;background:#142a22;border:1px solid #b49e66aa;color:#dfc995;}
+body.touch #select .select-header>b{margin-right:110px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+@media(max-width:740px){body.touch #select .select-header>b{display:none;}}
+body.touch #select .btns .challenge-note{width:100%;font-size:9px;line-height:1.2;margin:0;}
+body.touch #select .select-header{padding-right:126px;}body.touch #select .select-header>b{display:none;}body.touch #select .select-header>span{white-space:nowrap;}

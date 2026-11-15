@@ -41,6 +41,7 @@ function camp() {
   d.start = { x: 12, z: 25 };
   d.room(18,16,20,18,',').room(18,18,18,19,',');
   d.trigger('north_road',19,16,{r:3,label:'北行驿道 · 第二集'});
+  d.room(1,23,4,25,',');d.trigger('salt_road',1,24,{r:3,label:'西行盐道 · 第四集'});
   d.room(20,20,23,22,',');d.trigger('iron_road',23,21,{r:3,label:'东行山道 · 第三集'});
 
   d.torch(7, 19).torch(17, 19).torch(5, 23, 'W').torch(11, 18, 'W').torch(11, 2, 'W', 0x58d0a8).torch(13, 2, 'N', 0x58d0a8).torch(11, 2, 'N', 0x58d0a8);
@@ -263,6 +264,7 @@ function fortress() {
   d.trigger('keep_gate',21,22,{r:3,label:'黑铁纹章 · 王庭大门'});
   d.trigger('king_intro',21,18,{bounds:[8,3,34,19]});
   d.trigger('iron_bell',21,5,{r:3,label:'铁律之钟 · 反鸣'});
+  d.trigger('salt_road',32,5,{r:3,label:'西行盐道 · 盐沙古墓'});
   d.trigger('iron_camp',10,5,{r:3,label:'余烬归途 · 返回营地'});
   d.npc('iron_vera',19,54,{model:'vera',name:'拾钟人 · 薇拉'});
   for(const [x,z]of [[18,49],[24,49],[15,44],[27,44],[19,37],[23,37],[16,28],[26,28]])d.spawn('rebel',x,z,{level:12});
@@ -283,4 +285,58 @@ function fortress() {
   return {id:'fortress',name:'铁冠要塞 · 王座钟楼',sub:'铁律之钟 · 第三口反鸣',episode:3,floor:'tile',audio:'fortress',def:d,
     mood:{bg:0x11131c,fog:.009,hemi:[0x8398c0,0x30201b,1.1],key:[0xe4c59e,1.7],exposure:1.35,playerLight:35}};
 }
-export const LEVELS = { camp, crypt, forest, swamp, pass, fortress };
+// Chapter four: two optional flanks feed an ancient light mechanism, then a sealed burial complex.
+function saltflat(){
+ const d=carve(43,66);
+ d.room(17,53,25,63,',').room(18,43,24,52,',').room(7,32,35,42,',');
+ d.room(20,26,22,31,'.').room(8,10,34,25,',').room(19,2,23,9,'.');
+ d.gate('sun_gate',21,28);d.g[28][20]='#';d.g[28][22]='#';d.start={x:21,z:61};
+ d.trigger('salt_return',21,63,{r:3,label:'返回霜暮营地'}).trigger('salt_intro',21,55,{r:5});
+ d.trigger('mirror_west',9,36,{r:3,label:'西导流碑 · 引光'}).trigger('mirror_east',33,36,{r:3,label:'东导流碑 · 引光'});
+ d.trigger('shelter_altar',9,15,{r:3,label:'拾取避风护符 · 可选'});
+ d.trigger('sun_gate_hint',21,30,{r:3,label:'日轮石门 · 两道引光'});
+ d.trigger('tomb_entry',21,4,{r:3,label:'进入沙埋神殿'});
+ d.npc('salt_merchant',19,58,{model:'bram',name:'盐路商人 · 萨米尔'});
+ d.npc('salt_vera',23,58,{model:'vera',name:'拾钟人 · 薇拉'});
+ for(const [x,z]of [[20,51],[22,49],[19,46],[23,44],[18,40],[24,40],[15,38],[28,38],[11,33],[31,33],[16,23],[26,23],[14,17],[28,17]])d.spawn('saltdead',x,z,{level:13});
+ for(const [x,z]of [[8,34],[10,38],[32,38],[34,34],[18,18],[24,18]])d.spawn('tombguard',x,z,{level:14});
+ for(const [x,z]of [[11,35],[31,35],[24,47],[13,21],[29,21]])d.spawn('sandweaver',x,z,{level:14});
+ d.spawn('saltfiend',18,34,{level:14}).spawn('saltfiend',25,34,{level:14}).spawn('saltfiend',21,14,{level:14});
+ d.spawn('saltseal',12,13,{tag:'oasis_seal',level:14});
+ for(const [x,z]of [[8,36],[34,36],[21,26]])d.deco(x,z,'@salt_obelisk');
+ for(const [x,z]of [[17,57],[25,57],[7,32],[35,42],[8,11],[34,11]])d.block(x,z,'@salt_crystal');
+ for(const [x,z]of [[17,44],[25,44],[13,32],[29,32],[15,11],[27,11]])d.deco(x,z,'@salt_ruin',{rot:x%2?.35:-.3});
+ d.deco(9,14,'@salt_archive').deco(20,58,'@salt_brazier').deco(22,7,'@salt_brazier');
+ d.chest(8,40,{gold:260,potions:['hp','mp']}).chest(32,12,{gold:330,potions:['hp','mp'],golden:true});
+ return {id:'saltflat',name:'灰盐荒原 · 日轮遗址',sub:'第四集 · 盐沙古墓',episode:4,floor:'dirt',audio:'salt',def:d,
+ mood:{bg:0x34332c,fog:.006,hemi:[0xe2d8b5,0x4a4238,1.45],key:[0xffdda0,2.1],exposure:1.12,playerLight:18}};
+}
+function salttomb(){
+ const d=carve(43,63);
+ d.room(18,53,24,59,'.').room(9,39,33,52,'.').room(19,35,23,38,'.');
+ d.room(10,23,32,34,':').room(20,20,22,22,'.').room(7,3,35,19,':');
+ d.gate('tomb_seal',21,21);d.g[21][20]='#';d.g[21][22]='#';d.start={x:21,z:57};
+ d.trigger('tomb_return',21,59,{r:3,label:'返回灰盐荒原'}).trigger('tomb_intro',21,53,{r:4});
+ d.trigger('priest_intro',21,33,{bounds:[10,23,32,34]});
+ d.trigger('tomb_gate_hint',21,22,{r:3,label:'封尸之门 · 需要祭司的印记'});
+ d.trigger('queen_intro',21,18,{bounds:[7,3,35,19]});
+ d.trigger('salt_blueprint',21,5,{r:3,label:'古代铸钟图纸 · 阅读'});
+ d.trigger('salt_camp',9,5,{r:3,label:'余烬归途 · 返回营地'});
+ d.npc('tomb_vera',19,55,{model:'vera',name:'拾钟人 · 薇拉'});
+ d.npc('salt_inscription',31,44,{name:'铸钟人的石刻'});
+ for(const [x,z]of [[18,50],[24,50],[13,47],[29,47],[19,43],[23,43],[20,36],[22,36],[14,32],[28,32],[12,25],[30,25]])d.spawn('saltdead',x,z,{level:14});
+ for(const [x,z]of [[15,49],[27,49],[13,41],[29,41],[17,28],[25,28]])d.spawn('tombguard',x,z,{level:15});
+ for(const [x,z]of [[10,45],[32,45],[16,40],[26,40],[13,24],[29,24]])d.spawn('sandweaver',x,z,{level:15});
+ d.spawn('saltfiend',16,45,{level:15}).spawn('saltfiend',26,45,{level:15});
+ d.spawn('saltseal',12,29,{tag:'tomb_west',level:15}).spawn('saltseal',30,29,{tag:'tomb_east',level:15});
+ d.spawn('saltpriest',21,27,{tag:'saltpriest',level:15,asleep:true});
+ d.spawn('saltqueen',21,10,{tag:'saltqueen',level:16,asleep:true});
+ d.deco(21,4,'@salt_archive');
+ for(const [x,z]of [[10,4],[32,4],[9,16],[33,16],[11,24],[31,24]])d.block(x,z,'@salt_obelisk');
+ for(const [x,z]of [[9,39],[33,39],[11,51],[31,51],[14,23],[28,23]])d.deco(x,z,'@salt_brazier');
+ for(const [x,z]of [[10,49],[32,49],[17,35],[25,35],[8,8],[34,8]])d.deco(x,z,'@salt_crystal');
+ d.chest(10,41,{gold:320,potions:['hp','mp'],golden:true}).chest(31,50,{gold:250,potions:['hp','mp']});
+ return {id:'salttomb',name:'沙埋神殿 · 盐后陵寝',sub:'铸钟者留下的第一份罪证',episode:4,floor:'tile',audio:'salt_tomb',def:d,
+ mood:{bg:0x111e24,fog:.009,hemi:[0x9fc1c3,0x3c352a,1.2],key:[0xc7edf0,1.55],exposure:1.25,playerLight:32}};
+}
+export const LEVELS = { camp, crypt, forest, swamp, pass, fortress, saltflat, salttomb };

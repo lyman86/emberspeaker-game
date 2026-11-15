@@ -155,3 +155,6 @@ innerWidth=390;innerHeight=844;assert(!touch.active(),'portrait pauses combat in
 console.log('Touch stick direction, targeting, skill dispatch and cinematic input guards passed.');
 
 await import('./iron.mjs');
+
+await import('./runs-loading.mjs');
+await import('./salt.mjs');

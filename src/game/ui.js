@@ -5,6 +5,7 @@ import { SLOTS, SLOT_NAMES, RARITY, BASES, AFFIXES, itemIcon, potionIcon, affixT
 import { BAG_SIZE } from './player.js';
 import { MATERIALS, HOTBAR_ORDER, canUpgradeSlot, requiredLevel, enhancedStats, enhanceCost, salePrice } from './progression.js';
 import { PROFILES } from './models.js';
+import { CHAPTERS, MODES } from './runs.js';
 
 const $ = (s) => document.querySelector(s);
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -147,20 +148,51 @@ export class UI {
   noMana(name = '法力') { this.game.audio.play('denied'); if (!this._nm || performance.now() - this._nm > 1500) { this._nm = performance.now(); this.number(this.game.player.pos, name + '不足', 'info'); } }
 
   // ================================================================== class select
+  modeSelect(cb) {
+    const root=this.el.modes??=h('section','mode-screen');root.id='mode-select';root.setAttribute('aria-label','选择游戏模式');document.body.appendChild(root);
+    this.el.select.classList.add('hidden');root.classList.remove('hidden');
+    let mode='story',chapter=1;
+    const art=[`<circle cx="48" cy="49" r="28"/><path d="M29 59q19-34 38 0M36 29v-8m24 8v-8M48 13v52m-8 7h16"/>`,`<path d="m15 29 22-11 23 11 21-11v54L60 83 37 72 15 83zm22-11v54m23-43v54M25 52l9-7m13 10 8 4m12-14 8-5"/>`,`<path d="m19 35 15 13 14-27 14 27 15-13-7 35H26zM29 80h38M48 46v18M40 55h16"/>`];
+    const render=()=>{
+      const m=MODES.find(m=>m.id===mode);
+      root.innerHTML=`<header><div class="mode-wordmark">烬语者<small>EMBERSPEAKER</small></div><p>七时之钟 <i>／</i> 选择你的征途</p></header><main><div class="mode-choices">${MODES.map((m,i)=>`<button class="mode-card ${mode===m.id?'on':''}" data-mode="${m.id}" aria-pressed="${mode===m.id}"><svg viewBox="0 0 96 96" aria-hidden="true">${art[i]}</svg><small>${m.en}</small><h2>${m.name}</h2><p>${m.desc}</p><span>${mode===m.id?'已选择':'选择模式'} →</span></button>`).join('')}</div><section class="chapter-picker" aria-label="选择章节">${mode==='story'?'<div class="story-mode-note"><b>四集战役 · 一段连续旅程</b><span>选择英雄后继续原有存档，或从第一集重新出发。</span></div>':CHAPTERS.map(c=>`<button data-chapter="${c.id}" class="chapter-choice ${chapter===c.id?'on':''}" style="--chapter:${c.color}" aria-pressed="${chapter===c.id}"><small>CHAPTER 0${c.id} · Lv.${mode==='boss'?c.bossLevel:c.level}</small><b>${mode==='boss'?c.bossName:c.title}</b><span>${mode==='boss'?c.title:c.feature}</span></button>`).join('')}</section></main><footer><p>${mode==='story'?'故事成长自动保存':mode==='chapter'?'独立挑战 · 对应等级装备 · 不影响故事存档':'独立挑战 · 直接进入 Boss 场地 · 不影响故事存档'}</p><button class="mode-enter">选择英雄 <span>→</span></button></footer>`;
+      for(const b of root.querySelectorAll('[data-mode]'))b.onclick=()=>{mode=b.dataset.mode;this.game.audio.play('ui');render();};
+      for(const b of root.querySelectorAll('[data-chapter]'))b.onclick=()=>{chapter=Number(b.dataset.chapter);this.game.audio.play('ui');render();};
+      root.querySelector('.mode-enter').onclick=()=>{root.classList.add('hidden');cb({mode,chapter});};
+    };render();
+  }
+
+  prepareBoss(){
+    const g=this.game,root=h('section','boss-prep');root.id='boss-prep';
+    root.innerHTML=`<small>KEEPER TRIAL</small><h3>准备迎战</h3><p>可先强化 Q / W / E / R，技能栏实时显示剩余点数。</p><div><button class="allocate">技能与加点</button><button class="ready">准备完成 · 迎战 Boss</button></div>`;
+    document.body.appendChild(root);root.querySelector('.allocate').onclick=()=>this.openGrowth('skills');
+    root.querySelector('.ready').onclick=()=>{this.closePanels();root.remove();g.bossReady=true;g.story.onTrigger(({boss:'boss_intro',stag:'stag_intro',ironking:'king_intro',saltqueen:'queen_intro'})[CHAPTERS[g.run.chapter-1].boss]);};
+  }
+
+  runResult(run,seconds,deaths) {
+    const c=CHAPTERS[run.chapter-1],root=h('section','run-result');root.id='run-result';
+    root.innerHTML=`<div><small>${run.mode==='boss'?'KEEPER DEFEATED':'EXPEDITION COMPLETE'}</small><h2>${run.mode==='boss'?'守关者已倒下':'本集挑战完成'}</h2><p>${c.title} · ${this.game.player.C.name}</p><dl><div><dt>用时</dt><dd>${Math.floor(seconds/60)} 分 ${Math.floor(seconds%60)} 秒</dd></div><div><dt>倒下次数</dt><dd>${deaths}</dd></div></dl><p class="result-note">故事模式的存档保持独立。</p><button class="retry">再战一次</button><button class="back">返回模式选择</button></div>`;
+    document.body.appendChild(root);root.querySelector('.back').onclick=()=>this.game.returnToTitle();
+    root.querySelector('.retry').onclick=()=>{location.href=location.pathname+'?'+new URLSearchParams({mode:run.mode,chapter:run.chapter,cls:this.game.player.cls,autostart:'1',...(this.game.touchMode?{touch:'1'}:{})});};
+  }
+
   /** Title screen: choose a class (each class has its own save). cb(cls, fresh) */
-  classSelect(cb) {
+  classSelect(cb, selection={mode:'story',chapter:1}) {
     const g = this.game, sel = this.el.select;
     sel.classList.remove('hidden');
     this.selecting = true;
     this._buildShowcase();
     if(g.touchMode){sel.innerHTML='<header class="select-header"><div class="logo">烬语者<small>EMBERSPEAKER</small></div><span>选择你的烬语者</span><b>故事战役 · 七时之钟</b></header><div class="cards" role="listbox" aria-label="选择英雄"></div><section class="detail"></section><div class="select-stage-caption">灰烬仍在低语<small>五种命运 · 一段旅程</small></div>';this.show_.cam.position.set(0,1.9,6.5);this.show_.cam.lookAt(0,1.5,0);}
+    const mode=MODES.find(m=>m.id===selection.mode);
+    const back=h('button','mode-back','‹ 返回模式');back.onclick=()=>{this.selecting=false;this._disposeShowcase();sel.classList.add('hidden');g.title();};sel.querySelector('.mode-back')?.remove();sel.appendChild(back);
+    if(g.touchMode)sel.querySelector('.select-header>b').textContent=mode.name+' · '+(selection.mode==='story'?'七时之钟':CHAPTERS[selection.chapter-1].title);
     const list = sel.querySelector('.cards');
     list.innerHTML = '';
     let cur = CLASS_ORDER[2];
     const detail = sel.querySelector('.detail');
     const render = () => {
       for (const c of list.children){c.classList.toggle('on',c.dataset.cls===cur);c.setAttribute('aria-selected',String(c.dataset.cls===cur));}
-      const C = CLASSES[cur], info = g.saveInfo(cur);
+      const C = CLASSES[cur], info = selection.mode==='story'?g.saveInfo(cur):null;
       const bars = Object.entries(C.stats).map(([k, v]) => `<div class="bar"><span>${k}</span><b style="width:${v * 20}%"></b></div>`).join('');
       const skills = CLASS_SKILLS[cur].map((s) => `<div class="sk" title="${s.name}：${s.desc}">${s.icon}<i>${s.name}</i></div>`).join('');
       detail.innerHTML = `<h2>${C.name}<small>${C.title}</small></h2><p>${C.desc}</p><div class="bars">${bars}</div>
@@ -172,6 +204,7 @@ export class UI {
         const preview=i=>{const skill=CLASS_SKILLS[cur][i];detail.querySelector('.ability-preview').innerHTML=`<b>${skill.name}</b><span>${skill.desc}</span>`;for(const b of detail.querySelectorAll('.sk'))b.classList.toggle('on',+b.dataset.preview===i);};
         for(const b of detail.querySelectorAll('.sk'))b.onclick=()=>preview(+b.dataset.preview);preview(0);
       }
+      if(selection.mode!=='story'){detail.querySelector('.go').textContent='开始'+mode.name+' →';detail.querySelector('.btns').prepend(h('p','challenge-note',CHAPTERS[selection.chapter-1].title+' · Lv.'+(selection.mode==='boss'?CHAPTERS[selection.chapter-1].bossLevel:CHAPTERS[selection.chapter-1].level)));}
       detail.querySelector('.go').onclick = () => finish(false);
       const nb = detail.querySelector('.new');
       if (nb) nb.onclick = () => { if (confirm(`确定要删除「${C.name}」的存档并重新开始吗？`)) { g.deleteSave(cur); finish(true); } };
@@ -183,7 +216,7 @@ export class UI {
       const PF = PROFILES[C.profile];
       const card = h('div', 'card', `<img class="pt" src="${g.gear.portrait(g, PF.file, PF.builtinGear ?? [])}"><div class="nm">${C.name}</div><div class="sub">${info ? '等级 ' + info.level : '新角色'}</div>`);
       card.dataset.cls = k;card.setAttribute('role','option');card.setAttribute('aria-label',C.name);card.tabIndex=0;
-      card.onclick = () => { cur = k; g.audio.play('ui'); render(); };
+      card.onclick = () => { cur = k; g.audio.play('ui'); render(); };card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();card.click();}};
       list.appendChild(card);
     }
     render();
@@ -355,7 +388,7 @@ export class UI {
     this.el.bag.classList.remove('hidden');
     if(!S.querySelector('.workshop-button')){const b=h('button','workshop-button','强化装备 / 分解装备');b.onclick=()=>this.openGrowth('forge');S.querySelector('h3').after(b);}
     S.querySelector('.workshop-button').hidden=mode!=='smith';
-    S.querySelector('h3').textContent = mode === 'smith' ? '布拉姆的铁匠铺' : mode==='quartermaster'?'艾达的军需站':mode==='hunter'?'哈罗德的补给':'艾琳的药剂摊';
+    S.querySelector('h3').textContent = mode === 'smith' ? '布拉姆的铁匠铺' : mode==='quartermaster'?'艾达的军需站':mode==='saltmerchant'?'萨米尔的盐路补给':mode==='hunter'?'哈罗德的补给':'艾琳的药剂摊';
     if (mode === 'smith' && (!this._stock || this._stockLvl !== pl.level || this._stockCls !== pl.cls)) { this._stock = shopStock(pl.cls, pl.level); this._stockLvl = pl.level; this._stockCls = pl.cls; }
     this.refreshShop();
     this.refreshBag();
@@ -366,7 +399,7 @@ export class UI {
     const g = this.game, pl = g.player, S = this.el.shop, grid = S.querySelector('.grid');
     grid.innerHTML = '';
     grid.classList.toggle('supply-grid',this.shopMode!=='smith');
-    if (this.shopMode === 'apothecary'||['hunter','quartermaster'].includes(this.shopMode)) {
+    if (this.shopMode === 'apothecary'||['hunter','quartermaster','saltmerchant'].includes(this.shopMode)) {
       const supply=(icon,name,description,price,buy)=>{
         const row=h('button','ware',`<span class="ico" aria-hidden="true">${icon}</span><span class="nm">${name}</span><span class="ds">${description}</span><span class="pr">${price} 金币</span>`);
         row.type='button';row.onclick=buy;grid.appendChild(row);
@@ -376,7 +409,7 @@ export class UI {
       supply(potionIcon('hp'),'药剂礼包',`生命药水 ×4，${pl.C.res.name}药水 ×2`,110,()=>{
         if(pl.gold<110)return this._poor();pl.gold-=110;pl.potions.hp+=4;pl.potions.mp+=2;g.audio.play('coin');this.toast('购买：药剂礼包');g.save();this.refreshShop();this.refreshBag();
       });
-      if(['hunter','quartermaster'].includes(this.shopMode))for(const id of ['iron','soul']){
+      if(['hunter','quartermaster','saltmerchant'].includes(this.shopMode))for(const id of ['iron','soul']){
         const m=MATERIALS[id],price=m.price*2;
         const icon=id==='iron'?'<svg viewBox="0 0 40 40"><path d="m6 17 19-8 9 7-19 9z" fill="#b3b7b5" stroke="#d5c091"/><path d="M6 17v9l9 6v-7m0 7 19-9v-7" fill="#606c72" stroke="#b8aa85"/><path d="m12 16 12-5m-4 13 10-5" stroke="#e1e4df"/></svg>':'<svg viewBox="0 0 40 40"><path d="m20 4 11 13-4 15-10 4-9-15z" fill="#7464af" stroke="#c7b7ec"/><path d="m20 4-3 18 14-5m-14 5 10 10m-10-10v14l-9-15z" fill="#aa9ae0" stroke="#d7cef5"/></svg>';
         supply(icon,m.name,'强化装备材料 ×1',price,()=>{if(pl.gold<price)return this._poor();pl.gold-=price;pl.addMaterial(id);g.audio.play('coin');g.save();this.refreshShop();this.refreshBag();});
@@ -645,9 +678,9 @@ export class UI {
     this.el.ailment.hidden=!pl.plagueStacks;
     if (t) {
       this.el.bossDetails.hidden=!(t.T.boss||t.type==='butcher');
-      this.el.bossDetails.querySelector('.boss-phase').textContent=['stag','ironking'].includes(t.type)?`第 ${t.phase??1} 阶段 · ${Math.ceil(t.hp/t.maxHp*100)}%`:t.type==='blackknight'?'精英 · 黑铁盾势':t.type==='butcher'?'精英 · 缝合躯体':'守钟者';
+      this.el.bossDetails.querySelector('.boss-phase').textContent=['stag','ironking','saltqueen'].includes(t.type)?`第 ${t.phase??1} 阶段 · ${Math.ceil(t.hp/t.maxHp*100)}%`:t.type==='saltpriest'?'精英 · 封尸仪式':t.type==='blackknight'?'精英 · 黑铁盾势':t.type==='butcher'?'精英 · 缝合躯体':'守钟者';
       this.el.bossDetails.querySelector('.boss-intent').textContent=t.intent??(t.type==='boss'?'亡灵 · 弱圣光 / 抗暗影':t.type==='butcher'?'厚皮 · 物理与毒素抗性':'');
-      const poise=this.el.bossDetails.querySelector('.poise-track');poise.hidden=!['stag','blackknight','ironking'].includes(t.type);poise.querySelector('i').style.width=((t.stag?.poise??t.iron?.poise??0)*100)+'%';
+      const poise=this.el.bossDetails.querySelector('.poise-track');poise.hidden=!['stag','blackknight','ironking','saltpriest','saltqueen'].includes(t.type);poise.querySelector('i').style.width=((t.stag?.poise??t.iron?.poise??t.salt?.poise??0)*100)+'%';
       el.target.classList.remove('hidden');
       el.target.classList.toggle('boss', !!t.T.boss||t.type==='butcher');
       el.target.classList.toggle('elite',t.type==='butcher');
