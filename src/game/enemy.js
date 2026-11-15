@@ -165,6 +165,7 @@ export class Enemy extends Actor {
   }
 
   update(dt) {
+    this.saltArtUpdate?.(dt);
     const g = this.game, T = this.T;
     // target: the player, or a summoned minion that is closer
     let pl = g.player;

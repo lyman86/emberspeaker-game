@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { dressSaltQueen } from './salt-queen-art.js';
 
 const UP = new T.Vector3(0, 1, 0);
 const hash = (x, z) => { const n = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return n - Math.floor(n); };
@@ -129,7 +130,8 @@ export function saltScenery(lv) {
 
 /** Pose-space attachments follow the original Mixamo bones, including during death. */
 export function dressSaltEnemy(e) {
-  const file = ({ saltdead: 'warrior', sandweaver: 'mage', saltfiend: 'elite', tombguard: 'warrior', saltpriest: 'boss', saltqueen: 'vera', saltseal: 'mage' })[e.type];
+  if(e.type==='saltqueen'){const art=dressSaltQueen(e);e.saltArtUpdate=art.update;e.saltArtDispose=art.dispose;return;}
+  const file = ({ saltdead: 'warrior', sandweaver: 'mage', saltfiend: 'elite', tombguard: 'warrior', saltpriest: 'boss', saltseal: 'mage' })[e.type];
   if (!file) return;
   const root = new T.Group(), b = builder(root), c = palette(b);
   if (e.type === 'saltseal') {
@@ -146,8 +148,8 @@ export function dressSaltEnemy(e) {
       const group = new T.Group(); for (const mesh of [...root.children].slice(first)) group.add(mesh);
       group.applyMatrix4(ref.matrixWorld.clone().invert()); bone.add(group); b.attachments.push(group);
     };
-    const queen = e.type === 'saltqueen', priest = e.type === 'saltpriest', fiend = e.type === 'saltfiend', guard = e.type === 'tombguard', dead = e.type === 'saltdead';
-    for (const m of e.mats) m.color.setHex(fiend ? 0x4c9fc4 : queen ? 0xc7d7db : dead ? 0xb5af96 : 0xa2aaac);
+    const priest = e.type === 'saltpriest', fiend = e.type === 'saltfiend', guard = e.type === 'tombguard', dead = e.type === 'saltdead';
+    for (const m of e.mats) m.color.setHex(fiend ? 0x4c9fc4 : dead ? 0xb5af96 : 0xa2aaac);
     attach('Head', p => {
       if (dead) {
         for (let i = 0; i < 4; i++) b.add(new T.CylinderGeometry(.145, .15, .045, 10, 1, true), c.cloth, [p.x, p.y + .04 + i * .045, p.z]);
@@ -159,13 +161,9 @@ export function dressSaltEnemy(e) {
       } else if (fiend) {
         for (const side of [-1, 1]) b.crystal(c.salt, [p.x + side * .17, p.y + .26, p.z], .45, .085, side * -.45);
       }
-      if (queen || priest) {
+      if (priest) {
         b.add(new T.CylinderGeometry(.19, .2, .08, 10, 1, true), c.bronze, [p.x, p.y + .24, p.z]);
         for (let i = 0; i < 7; i++) { const a = i * Math.PI * 2 / 7; b.crystal(c.bright, [p.x + Math.sin(a) * .18, p.y + .38, p.z + Math.cos(a) * .18], i === 0 ? .36 : .24, .045); }
-      }
-      if (queen) {
-        const veil = b.mat(0xd4e6df, { transparent: true, opacity: .48, side: T.DoubleSide, depthWrite: false });
-        for (const side of [-1, 1]) b.box(veil, [p.x + side * .26, p.y - .42, p.z - .18], [.22, 1.3, .012], [0, side * .25, side * -.18]);
       }
     });
     attach('Spine2', p => {
@@ -179,19 +177,13 @@ export function dressSaltEnemy(e) {
         b.box(c.dark, [p.x, p.y - .09, p.z], [priest ? .58 : .48, .48, .28]);
         b.box(c.bronze, [p.x, p.y - .1, p.z + .16], [.12, .46, .025]);
       }
-      if (queen) {
-        // A crystal backrest silhouette moves with her, like a walking salt throne.
-        for (let i = -3; i <= 3; i++) b.crystal(c.salt, [p.x + i * .14, p.y + .22, p.z - .28], 1.15 - Math.abs(i) * .14, .065, -i * .18);
-        for (const side of [-1, 1]) b.add(new T.SphereGeometry(1, 8, 6), c.bronze, [p.x + side * .23, p.y + .1, p.z], [.13, .07, .16]);
-        b.box(c.bright, [p.x, p.y - .04, p.z + .16], [.16, .22, .06]);
-      }
       if (e.type === 'sandweaver') {
         b.add(new T.ConeGeometry(.32, .7, 8, 1, true), c.cloth, [p.x, p.y + .07, p.z - .05], [1, 1, .7]);
         for (const side of [-1, 1]) b.box(c.cloth, [p.x + side * .2, p.y - .4, p.z - .12], [.18, 1.1, .025], [0, 0, side * -.14]);
       }
     });
-    if (queen || priest) attach('Hips', p => {
-      b.add(new T.CylinderGeometry(.19, queen ? .53 : .4, .95, 12, 1, true), queen ? c.salt : c.cloth, [p.x, p.y - .4, p.z], [1, 1, .8]);
+    if (priest) attach('Hips', p => {
+      b.add(new T.CylinderGeometry(.19, .4, .95, 12, 1, true), c.cloth, [p.x, p.y - .4, p.z], [1, 1, .8]);
       b.add(new T.TorusGeometry(.24, .025, 4, 16), c.bronze, [p.x, p.y + .04, p.z], [1, 1, .8], [Math.PI / 2, 0, 0]);
     });
     if (dead) for (const side of ['LeftForeArm', 'RightForeArm', 'LeftLeg', 'RightLeg']) attach(side, p => {
@@ -201,12 +193,12 @@ export function dressSaltEnemy(e) {
       b.box(c.dark, [p.x, p.y, p.z + .08], [.42, .72, .08]); b.box(c.bronze, [p.x, p.y, p.z + .13], [.05, .64, .025]);
       b.crystal(c.salt, [p.x, p.y + .33, p.z + .13], .22, .08);
     });
-    if (queen || priest || guard || e.type === 'sandweaver') attach('RightHand', p => {
+    if (priest || guard || e.type === 'sandweaver') attach('RightHand', p => {
       b.bar([p.x, p.y - .55, p.z], [p.x, p.y + .65, p.z], .025, c.bronze);
       if (guard) b.add(new T.ConeGeometry(.11, .42, 4), c.salt, [p.x, p.y + .8, p.z]);
       else {
         b.add(new T.TorusGeometry(.16, .025, 5, 16), c.bronze, [p.x, p.y + .7, p.z]);
-        b.crystal(c.bright, [p.x, p.y + .78, p.z], queen ? .45 : .3, .08);
+        b.crystal(c.bright, [p.x, p.y + .78, p.z], .3, .08);
       }
     });
   }

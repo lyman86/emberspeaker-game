@@ -2,6 +2,7 @@ import * as T from 'three';
 import {inLane,inSector} from './stag.js';
 import {stagTelegraph} from './stag-vfx.js';
 import {shoot} from './skills.js';
+import { saltCasting, saltEruption, saltPrism, saltStorm, saltShard } from './salt-vfx.js';
 const UP=new T.Vector3(0,1,0),V=(x=0,z=0)=>new T.Vector3(x,0,z);
 const targets=e=>[e.game.player,...(e.game.allies??[])].filter(a=>a.alive);
 export const saltShielded=e=>e.game.enemies.some(o=>o.alive&&o.type==='saltseal'&&o.pos.distanceTo(e.pos)<38);
@@ -27,10 +28,10 @@ function hurt(e,a,damage,storm=false){
  const mantle=storm&&a.has?.('saltmantle')? .65:1;
  a.hurt(damage*shelter*mantle*(a===g.player?1:.6),e.pos);
 }
-function spikes(g,p,r=3,count=g.low?8:14){g.fx.spikes(p,{count,radius:r,color:0xc5e7e7,emissive:0x28687a,height:3.5,hold:.6,rough:.3});g.fx.ring(p,{color:[.7,2.1,2.4],r0:.5,r1:r+1,dur:.5});g.audio.play('shatter',p,.6);}
+function spikes(g,p,r=3){saltEruption(g,p,r);}
 function shard(e,dir,damage){
  const g=e.game,from=e.pos.clone().setY(1.9);
- shoot(g,{team:'enemy',pos:from,vel:dir.clone().multiplyScalar(18),pal:'ice',size:.27,r:.45,life:3,light:25,onHit:(a,p)=>{g.fx.spark(p,'ice',8);if(a)hurt(e,a,damage);}});
+ shoot(g,{team:'enemy',mesh:saltShard(g),ribbonWidth:.16,ribbonColor:[.8,1.5,1.6],pos:from,vel:dir.clone().multiplyScalar(18),pal:'ice',size:.27,r:.45,life:3,light:25,onHit:(a,p)=>{g.fx.spark(p,'ice',8);if(a)hurt(e,a,damage);}});
 }
 function makeSeals(e,n){
  const g=e.game,alive=g.enemies.filter(o=>o.alive&&o.type==='saltseal'&&o.pos.distanceTo(e.pos)<38).length;
@@ -38,16 +39,6 @@ function makeSeals(e,n){
   const a=i*Math.PI*2/n,q=g.level.nearestFree(e.home.x+Math.sin(a)*9,e.home.z+Math.cos(a)*9,.9);
   if(q){const seal=g.spawnEnemy('saltseal',q.x,q.z,{tag:'summon',level:e.level});seal.intent='共鸣盐晶 · 击碎以解除盐冠护壳';g.fx.pillar(seal.pos,'ice',20,5);}
  }
-}
-function stormArt(g,c,duration){
- const root=new T.Group(),geo=new T.PlaneGeometry(120,100).rotateX(-Math.PI/2),mat=new T.ShaderMaterial({transparent:true,depthWrite:false,side:T.DoubleSide,
- uniforms:{time:{value:0},safe:{value:new T.Vector2(c.safe.x,c.safe.z)},alpha:{value:1}},
- vertexShader:'varying vec3 w;void main(){w=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}',
- fragmentShader:'varying vec3 w;uniform float time,alpha;uniform vec2 safe;void main(){float d=length(w.xz-safe);float mask=smoothstep(5.2,6.3,d);float stream=.5+.5*sin(w.x*.7+w.z*.3-time*4.);float grain=.5+.5*sin(w.x*9.-w.z*13.+time*17.);vec3 sand=mix(vec3(.32,.23,.12),vec3(.84,.73,.48),stream);gl_FragColor=vec4(sand,mask*(.1+stream*.14+grain*.04)*alpha);}'
- });root.position.set(c.origin.x,.12,c.origin.z);root.add(new T.Mesh(geo,mat));g.gfx.scene.add(root);let t=0;
- g.fx.add(dt=>{if(g.cinematic)return true;t+=dt;mat.uniforms.time.value=t;mat.uniforms.alpha.value=Math.min(1,(duration-t)*2);return t<duration;},()=>{root.removeFromParent();geo.dispose();mat.dispose();});
- g.fx.glyph(c.safe,{tex:'ring_soft',color:[.3,2.5,2.1],r:5.5,dur:duration,spin:0});
- g.fx.glyph(c.safe,{tex:'magic2',color:[.4,1.6,1.7],r:4.8,dur:duration,spin:-.15});
 }
 function cast(e,kind){
  const g=e.game,s=e.salt,origin=e.pos.clone(),dir=g.player.pos.clone().sub(origin).setY(0).normalize();if(!dir.lengthSq())dir.set(0,0,1);
@@ -61,12 +52,12 @@ function cast(e,kind){
   // Safety always starts within a reachable dodge, even if authored scenery rules out a fixed shrine.
   const legal=choices.filter(p=>p.distanceTo(g.player.pos)<14),q=legal[s.index%Math.max(1,legal.length)]??g.player.pos;
   c.safe=q.clone();const free=g.level.nearestFree(c.safe.x,c.safe.z,.8);if(free){c.safe.x=free.x;c.safe.z=free.z;}
-  stormArt(g,c,c.windup+c.active);g.ui.toast('盐沙风暴 · 进入青色圆环避风');
+  saltStorm(g,c,c.windup+c.active);g.ui.toast('盐沙风暴 · 进入青色圆环避风');
  } else if(kind==='prism'){
   c.lanes=Array.from({length:6},(_,i)=>({origin,dir:dir.clone().applyAxisAngle(UP,i*Math.PI/3),length:40}));
   for(const lane of c.lanes)c.warnings.push(stagTelegraph(g,{kind:'charge',...lane,width:2.8,duration:c.windup}));
  } else c.warnings.push(stagTelegraph(g,{kind:kind==='crown'?'disc':'cleave',origin,dir,radius:kind==='crown'?8:16,angle:Math.PI*.7,duration:c.windup}));
- s.cast=c;s.poise=0;e.facing=Math.atan2(dir.x,dir.z);e.playTimed?.(kind==='fan'?'attack':'Spellcast_Raise',c.windup,{restart:true});
+ s.cast=c;s.poise=0;saltCasting(g,e,c);e.facing=Math.atan2(dir.x,dir.z);e.playTimed?.(kind==='fan'?'attack':'Spellcast_Raise',c.windup,{restart:true});
  e.intent={fan:'晶刃扇射 · 从弹道空隙穿过',fault:'盐棱断层 · 离开三处预警圆',storm:'盐沙风暴 · 青色圆环内安全',crown:'凝结盐冠 · 控制打断 / 破坏盐晶',prism:'六棱裁决 · 躲到射线之间'}[kind];g.audio.play(kind==='storm'?'raise':'e_spikes',origin,.65);
 }
 function chief(e,dt){
@@ -82,7 +73,7 @@ function chief(e,dt){
    if(c.kind==='fault')for(const p of c.points)spikes(g,p);
    if(c.kind==='fan')for(let i=-2;i<=2;i++)shard(e,c.dir.clone().applyAxisAngle(UP,i*.21),e.type==='saltqueen'?83:65);
    if(c.kind==='crown')makeSeals(e,e.type==='saltqueen'?3:2);
-   if(c.kind==='prism')for(const lane of c.lanes){g.fx.bolt(lane.origin.clone().setY(1.2),lane.origin.clone().addScaledVector(lane.dir,40).setY(1.2),{color:[1.3,2.5,2.8],dur:1.4,width:.17,branches:0});for(let i=1;i<6;i++)spikes(g,lane.origin.clone().addScaledVector(lane.dir,i*6),1,g.low?2:4);}
+   if(c.kind==='prism')saltPrism(g,c);
   }
   if(t<=c.active){
    if(c.kind==='storm'){

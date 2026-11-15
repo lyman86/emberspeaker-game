@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { MAX_LEVEL, XP_TABLE, earnedPoints, spentPoints, freeRank, canUpgradeSlot, HOTBAR_ORDER, requiredLevel, enhanceCost, enhance, enhancedStats, salePrice } from '../src/game/progression.js';
 import { CLASS_SKILLS } from '../src/game/skills.js';
+import { levelResources } from '../src/game/resources.js';
+import { PBR_SETS } from '../src/core/materials.js';
 import { Player } from '../src/game/player.js';
 import { LEVELS } from '../src/game/maps.js';
 import { ENEMY_TYPES } from '../src/game/enemy.js';
@@ -53,11 +55,11 @@ console.log('Progression, upgrade transactions, legacy migration, skill budget, 
 
 // Exercise delayed skill effects with real Three.js geometry and a minimal game loop.
 const THREE=await import('three');
-for(const [cls,skills] of Object.entries(CLASS_SKILLS)) for(const rank of [1,3,5]) for(const skill of skills){
+for(const map of ['crypt','salttomb']) for(const [cls,skills] of Object.entries(CLASS_SKILLS)) for(const rank of [1,3,5]) for(const skill of skills){
   const effects=[],timers=[],damage=[];
   const enemy={pos:new THREE.Vector3(0,0,3),radius:0.6,scale:1,alive:true,freeze(){},slowFor(){}};
   const noop=()=>{};
-  const game={time:0,enemies:[enemy],allies:[],projectiles:[],audio:{play:noop},ui:{number:noop},particles:{emit:noop},smoke:{emit:noop},materials:{tex:{dark_rock:{nor:null}}},
+  const game={time:0,enemies:[enemy],allies:[],projectiles:[],audio:{play:noop},ui:{number:noop},particles:{emit:noop},smoke:{emit:noop},materials:{tex:Object.fromEntries(levelResources(LEVELS[map](),cls).materials.map(name=>[PBR_SETS[name].id,{nor:null}]))},
     gfx:{scene:new THREE.Scene(),flash:()=>new THREE.Object3D(),addShake:noop},hitStop:noop,
     fx:new Proxy({orb:()=>new THREE.Group(),add(fn,dispose){effects.push({fn,dispose});},tex:{},planeGeo:new THREE.PlaneGeometry(),sphereGeo:new THREE.SphereGeometry()}, {get:(o,k)=>k in o?o[k]:noop}),
     level:{clear:()=>true,displacement:(from,to)=>to.clone(),blocked:()=>false,move(pos,x,z){pos.x+=x;pos.z+=z;return true;}},
@@ -80,9 +82,9 @@ for(const [cls,skills] of Object.entries(CLASS_SKILLS)) for(const rank of [1,3,5
     }
     assert.equal(game.gfx.scene.children.filter(o=>o.userData.ultimateFx).length,0,'ultimate visual groups must be released');
     if(skill.slot===6){if(cls==='necro')assert.equal(game.allies.length,rank>=3?9:7);else assert(damage.length>0);}
-  }catch(error){throw new Error(`${cls} ${skill.id} rank ${rank}: ${error.message}`,{cause:error});}
+  }catch(error){throw new Error(`${map} ${cls} ${skill.id} rank ${rank}: ${error.message}`,{cause:error});}
 }
-console.log('All 35 skills exercised at ranks 1, 3 and 5, including delayed effects and ultimate summons.');
+console.log('All 35 skills exercised at ranks 1, 3 and 5 with actual crypt/salt-tomb resource plans, including delayed effects and ultimate summons.');
 const {Campaign}=await import('../src/game/campaign.js');
 const gates=[],quests=[];
 const cg={player:{level:6,pos:new THREE.Vector3(),gainXp(){}},enemies:[],time:0,cinematic:false,
@@ -158,3 +160,6 @@ await import('./iron.mjs');
 
 await import('./runs-loading.mjs');
 await import('./salt.mjs');
+
+await import('./mage-effects.mjs');
+await import('./salt-art.mjs');

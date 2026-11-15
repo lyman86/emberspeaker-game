@@ -3,8 +3,8 @@ import { CLASSES } from './classes.js';
 import { ENEMY_TYPES } from './enemy.js';
 import { PROP_MAP } from './level.js';
 
-// Gear uses these four shared texture sets in every chapter, including the hero showcase.
-export const SHARED_MATERIALS = ['wood','headstone','leaves','slate'];
+// Gear and shared combat debris use these texture sets in every chapter.
+export const SHARED_MATERIALS = ['wood','headstone','leaves','slate','rockTop'];
 export const MENU_RESOURCES = {models:['mx:anims',...Object.values(CLASSES).map(c=>'mx:'+PROFILES[c.profile].file)],materials:[...SHARED_MATERIALS,'stoneFloor']};
 const SCANS = {
   '@tree':['tree_stump_01'], '@campfire':['stone_fire_pit','wooden_stool_01','dead_tree_trunk'], '@cryptdoor':['large_castle_door'],
