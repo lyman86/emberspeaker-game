@@ -1,3 +1,4 @@
+import {equipmentDamage,equipmentOnHit} from './game/equipment-effects.js';
 import * as THREE from 'three';
 import { Assets } from './core/assets.js';
 import { Gfx } from './core/gfx.js';
@@ -22,7 +23,8 @@ import { TouchControls } from './game/touch.js';
 import {saltDamage} from './game/salt.js';
 import {ironDamage} from './game/iron.js';
 import { bossDamage } from './game/stag.js';
-import { HarborCampaign as Campaign } from './game/harbor-campaign.js';
+import { WinterCampaign as Campaign } from './game/winter-campaign.js';
+import {winterDamage,updateWinterWeather} from './game/winter.js';
 import {harborDamage} from './game/harbor.js';
 import { MENU_RESOURCES, SHARED_MATERIALS, levelResources } from './game/resources.js';
 import { CHAPTERS, challengeSetup, prepareChallengePlayer, runSaveKey } from './game/runs.js';
@@ -239,7 +241,7 @@ class Game {
       this.story.onStart();
     } else if (save || import.meta.env.DEV && params.has('qa')) {
       this.ui.fade(false);
-      this.audio.setMood(this.level.spec.audio);
+      this.player.chillUntil=0;this.player.chillStacks=0;this.audio.setMood(this.level.spec.audio);
       this.ui.setQuest(save?.quest?.[0] ?? '午夜钟声', save?.quest?.[1] ?? '');
       this.ui.banner(this.level.spec.name, '继续冒险');
       if(this.story.stage==='done')this.story.quest();
@@ -272,7 +274,7 @@ class Game {
   async loadLevel(id, { silent = false } = {}) {
     if(this.loadingLevel)return;this.loadingLevel=true;
     const spec = LEVELS[id]();
-    if(this.run?.mode==='boss'){const c=CHAPTERS[this.run.chapter-1];spec.def.spawns=spec.def.spawns.filter(s=>s.type===c.boss);spec.def.npcs=[];spec.def.chests=[];spec.def.triggers=spec.def.triggers.filter(t=>['boss_intro','stag_intro','king_intro','queen_intro','angler_intro'].includes(t.id));spec.def.start={x:c.point[0],z:c.point[1]};}
+    if(this.run?.mode==='boss'){const c=CHAPTERS[this.run.chapter-1];spec.def.spawns=spec.def.spawns.filter(s=>s.type===c.boss);spec.def.npcs=[];spec.def.chests=[];spec.def.triggers=spec.def.triggers.filter(t=>['boss_intro','stag_intro','king_intro','queen_intro','angler_intro','abbess_intro'].includes(t.id));spec.def.start={x:c.point[0],z:c.point[1]};}
     const f=this.story.second,peaceful=id==='camp'&&['epilogue','done'].includes(this.story.stage);
     spec.def.spawns=peaceful?[]:spec.def.spawns.filter(s=>!(s.tag==='boss'&&this.story.flags.bossDead||s.tag==='elite'&&this.story.flags.key||s.tag?.startsWith('totem_')&&f.totems.includes(s.tag)||s.tag==='butcher'&&f.butcher||s.tag==='stag'&&f.bossDead||this.story.skipSpawn(s)));
     const needed=levelResources(spec,this.player.cls);
@@ -425,7 +427,7 @@ class Game {
    */
   dropItem(item, at, { near = false } = {}) {
     const R = RARITY[item.rarity];
-    const col = new THREE.Color(R.color);
+    const col = new THREE.Color(item.apex?'#b8f5ff':R.color);
     const mesh = new THREE.Group();
     const m = this.gear.model(item);
     const kind = visualKind(item);
@@ -464,7 +466,7 @@ class Game {
     label.addEventListener('click', (e) => { e.stopPropagation(); if (e.button === 0 && this.player.alive && !this.cinematic) { this.player.interactTarget = l; this.player.moveTo(l.pos.x, l.pos.z); } });
     this.loot.push(l);
     if (!near) {
-      if (item.rarity === 'legendary') { this.audio.play('legendary', at); this.ui.toast('传奇物品掉落：' + item.name); this.gfx.flash(at, 0xff9a40, 260, 0.9, 18); }
+      if (item.rarity === 'legendary') { this.audio.play('legendary', at); this.ui.toast((item.apex?'远古圣遗现世：':'传奇物品掉落：') + item.name); this.gfx.flash(at, 0xff9a40, 260, 0.9, 18); }
       else if (item.rarity === 'rare') this.audio.play('raredrop', at, 0.8);
     } else this.audio.play('itemdrop', at, 0.7);
     return l;
@@ -526,7 +528,7 @@ class Game {
   hurtEnemy(e, dmg, opts = {}) {
     const multiplier=((e.markedUntil??0)>this.time?1.2:1)*((this.player.has('plagueband')||this.player.has('sunseal')) && (e.slow>0||e.frozen>0)?1.2:1);
     const v = typeof dmg === 'number' ? Math.round(dmg) : dmg.v, crit = typeof dmg === 'number' ? false : dmg.crit;
-    const final=harborDamage(e,saltDamage(e,ironDamage(e,bossDamage(e,Math.round(v*multiplier)*(this.player.buffs.siegebreaker?1.15:1),opts,this),opts,this),opts,this),opts,this);
+    const final=equipmentDamage(this,e,winterDamage(e,harborDamage(e,saltDamage(e,ironDamage(e,bossDamage(e,Math.round(v*multiplier)*(this.player.buffs.siegebreaker?1.15:1),opts,this),opts,this),opts,this),opts,this),opts,this));
     if (!e.takeDamage(final, opts)) { if (e.alive && e.invulnerable) this.ui.number({ x: e.pos.x, y: e.scale, z: e.pos.z }, '免疫', 'info'); return; }
     if(this.player.has('hookchain') && (this.player._hookCd??0)<=0 && e.alive && !e.T.tough && Math.random()<0.15){
       this.player._hookCd=3;e.stun(1);const dir=this.player.pos.clone().sub(e.pos).setY(0);if(dir.length()>2){dir.setLength(Math.min(3,dir.length()-2));this.level.move(e.pos,dir.x,dir.z,e.radius);}
@@ -536,6 +538,7 @@ class Game {
       const pl=this.player;pl._sealHits=pl._sealTarget===e?(pl._sealHits??0)+1:1;pl._sealTarget=e;
       if(pl._sealHits>=3&&!(pl._sealAt>this.time)){pl._sealHits=0;pl._sealAt=this.time+2;const extra=Math.round(final*.6);e.takeDamage(extra,{...opts,quiet:true});this.ui.number(e.pos,extra+' 印玺','crit');this.fx.spark(e.pos,'steel',12);}
     }
+    equipmentOnHit(this,e,final,opts);
     if (!opts.ally) this.ui.setTarget(e);
     if (!opts.quiet) this.audio.play('hit', e.pos, 0.7);
     if (crit) this.hitStop(0.035);
@@ -547,7 +550,7 @@ class Game {
     const T = e.T, pl = this.player;
     if(e.tag!=='summon')pl.gainXp(T.xp);
     if(e.tag!=='summon' && e.type!=='totem'){
-      pl.addMaterial(T.episode===5?'barnacle':T.episode===4?'salt':T.episode===3?'insignia':T.episode===2?'venom':'bone',T.tough?3:1);
+      pl.addMaterial(T.episode===6?'frost':T.episode===5?'barnacle':T.episode===4?'salt':T.episode===3?'insignia':T.episode===2?'venom':'bone',T.tough?3:1);
       if(T.boss)pl.addMaterial('star');
       else if(T.tough)pl.addMaterial('soul',2);
       else if(Math.random()<0.45)pl.addMaterial('iron');
@@ -560,9 +563,9 @@ class Game {
     // equipment: special and legendary gear only comes from the field
     if(e.tag!=='summon'){
       const chapter=T.episode??1;
-      if(T.boss){this.dropItem(rollDrop(pl.cls,Math.max(e.level,pl.level)+1,2,chapter),e.pos);this.dropItem(rollDrop(pl.cls,pl.level+1,1,chapter),e.pos);}
-      else if(T.tough){this.dropItem(rollDrop(pl.cls,pl.level+1,1,chapter),e.pos);this.dropItem(rollDrop(pl.cls,pl.level,0,chapter),e.pos);}
-      else if(Math.random()<.14)this.dropItem(rollDrop(pl.cls,pl.level,0,chapter),e.pos);
+      if(T.boss){this.dropItem(rollDrop(pl.cls,Math.max(e.level,pl.level)+1,2,chapter,{apexEligible:true}),e.pos);this.dropItem(rollDrop(pl.cls,pl.level+1,1,chapter),e.pos);}
+      else if(T.tough){this.dropItem(rollDrop(pl.cls,pl.level+1,1,chapter,{apexEligible:true}),e.pos);this.dropItem(rollDrop(pl.cls,pl.level,0,chapter),e.pos);}
+      else if(Math.random()<.14)this.dropItem(rollDrop(pl.cls,pl.level,0,chapter,{apexEligible:true}),e.pos);
     }
     this.story.onKill(e);
   }
@@ -580,9 +583,9 @@ class Game {
     this.projectiles = [];
     for (const e of this.enemies) {
       if (!e.alive) continue;
-      e.harborMinor=null;e.harborCd=2;e.saltMinor=null;e.saltCd=2;e.ironMove=null;e.ironCd=2;e.stagger=0;e.frozen=0;e.slow=0;
+      e.winterMinor=null;e.winterCd=2;e.harborMinor=null;e.harborCd=2;e.saltMinor=null;e.saltCd=2;e.ironMove=null;e.ironCd=2;e.stagger=0;e.frozen=0;e.slow=0;
       if (e.tag === 'summon') { e.dispose(); e.gone = true; continue; }
-      if (e.T.boss) { e.asleep = true; e.hp = e.maxHp; e.summons = 0; e.phase=1; e.stag=null;e.iron=null;e.salt=null;e.harbor=null;e.ironMove=null;e.intent='';e.barkUntil=0; e.bossT=1.2; e.specialCd=2; e.queue=[]; e.invulnerable = false; e.state = 'idle'; e.pos.copy(e.home); }
+      if (e.T.boss) { e.asleep = true; e.hp = e.maxHp; e.summons = 0; e.phase=1; e.stag=null;e.iron=null;e.salt=null;e.harbor=null;e.winter=null;e.ironMove=null;e.intent='';e.barkUntil=0; e.bossT=1.2; e.specialCd=2; e.queue=[]; e.invulnerable = false; e.state = 'idle'; e.pos.copy(e.home); }
       else if (e.state !== 'dormant' && e.state !== 'rising') { e.state = 'idle'; e.pos.copy(e.home); e.hp = e.maxHp; }
     }
     this.enemies = this.enemies.filter((e) => !e.gone);
@@ -591,7 +594,7 @@ class Game {
     this.player.revive(this.checkpoint);
     this.gfx.snap(this.player.pos);
     this.fx.pillar(this.player.pos, 'fire', 80, 8);
-    this.audio.setMood(this.level.spec.audio);
+    this.player.chillUntil=0;this.player.chillStacks=0;this.audio.setMood(this.level.spec.audio);
   }
 
   torchAt(x, y, z, color, power) { this.level.torches.push({ x, y, z, color, power, seed: Math.random() * 60 }); }
@@ -643,6 +646,7 @@ class Game {
     this._updateEmitters(dt);
     this._updateTriggers();
     lv.update(dt);
+    updateWinterWeather(this,dt);
     this.fx.update(dt);
     this.decals.update(dt);
     this.particles.update(dt, innerHeight, this.gfx.camera.fov);

@@ -7,6 +7,7 @@ export const CHAPTERS = [
  {id:3,title:'铁冠叛旗',subtitle:'石脊关与铁冠要塞',start:'pass',bossMap:'fortress',boss:'ironking',bossName:'叛王 · 赫拉克留斯',level:10,bossLevel:13,point:[21,13],color:'#be7971',feature:'侧翼破军阵 · 控制破盾'},
  {id:4,title:'盐沙古墓',subtitle:'灰盐荒原与沙埋神殿',start:'saltflat',bossMap:'salttomb',boss:'saltqueen',bossName:'盐之女王 · 瑟芮娅',level:13,bossLevel:16,point:[21,13],color:'#e1c99b',feature:'盐晶导流 · 沙暴中的安全区'},
  {id:5,title:'沉钩之港',subtitle:'雾岛港口与沉船墓场',start:'harbor',bossMap:'wreck',boss:'angler',bossName:'深渊铃鱼 · 奥尔古',level:16,bossLevel:18,point:[21,13],color:'#83bac2',feature:'断钟链 · 破灯囊 · 位移穿潮'},
+ {id:6,title:'寒脊哀歌',subtitle:'寒脊山口与冰封修道院',start:'frostpass',bossMap:'monastery',boss:'winterabbess',bossName:'冬死修女长 · 伊瑟拉',level:18,bossLevel:20,point:[19,13],color:'#a3cddd',feature:'接续薪火 · 打断安魂 · 暴雪避风'},
 ];
 export const MODES = [
  {id:'story',name:'故事模式',en:'THE SEVEN BELLS',desc:'跟随钟声继续旅程，保留英雄的装备与成长。'},
@@ -21,10 +22,12 @@ export function challengeSetup(mode,chapter) {
  if(c.id>2)flags.ep2={started:true,done:true,bossDead:true,butcher:true,totems:['totem_0','totem_1','totem_2']};
  if(c.id>3)flags.ep3={done:true,bossDead:true,knight:true,orders:true,standards:[]};
  if(c.id>4)flags.ep4={done:true,blueprint:true,bossDead:true,priest:true,mirrors:['west','east'],seals:[]};
+ if(c.id>5){flags.tongues=4;flags.ep5={done:true,bossDead:true,captain:true,beacons:['beacon_west','beacon_east'],chains:['chain_west','chain_east']};}
  if(boss){
   if(c.id===1)Object.assign(flags,{key:true});
   if(c.id===2)flags.ep2={started:true,messenger:true,hunter:true,butcher:true,totems:['totem_0','totem_1','totem_2']};
   if(c.id===3)flags.ep3={started:true,knight:true,orders:true,standards:[]};
+  if(c.id===6)flags.ep6={started:true,giant:true,fires:['fire_outpost','fire_ravine','fire_watch'],pages:['testament_west','testament_east']};
   if(c.id===5)flags.ep5={started:true,captain:true,beacons:['beacon_west','beacon_east'],chains:['chain_west','chain_east']};
   if(c.id===4)flags.ep4={started:true,priest:true,mirrors:['west','east'],seals:[]};
  }

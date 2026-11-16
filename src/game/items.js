@@ -19,6 +19,9 @@ export const RARITY = {
 
 /** Base types. cls limits who may equip (weapons/offhands); armour is shared. */
 export const BASES = {
+  rimeplate:{slot:'chest',name:'寒铸重甲',armor:16,icon:'chest',visual:'chest',minLevel:18,fixed:{hazardResist:2}},
+  channelrobe:{slot:'chest',name:'静祷法衣',armor:9,icon:'robe',visual:'robe',minLevel:18,fixed:{resRegen:.5,cdr:1}},
+  stalkerleather:{slot:'chest',name:'裂誓猎装',armor:11,icon:'leather',visual:'leather',minLevel:18,fixed:{eliteDmg:2}},
   staff: { slot: 'weapon', name: '法杖', cls: ['mage', 'necro'], dmg: 11, icon: 'staff', twoHand: true },
   wand: { slot: 'weapon', name: '魔杖', cls: ['mage', 'necro'], dmg: 8, icon: 'wand' },
   scythe: { slot: 'weapon', name: '骨镰', cls: ['necro'], dmg: 10, icon: 'scythe', twoHand: true },
@@ -44,12 +47,20 @@ export const BASES = {
 
 /** Material tiers by item level — just flavour names on top of the base. */
 const TIERS = [
-  [1, '破旧的'], [3, '铁制'], [5, '精钢'], [7, '秘银'], [10, '黑铁'], [13, '王庭精钢'], [15, '盐晶锻造'],
+  [1, '破旧的'], [3, '铁制'], [5, '精钢'], [7, '秘银'], [10, '黑铁'], [13, '王庭精钢'], [15, '盐晶锻造'], [18,'寒誓锻造'],[22,'古王遗铸'],[26,'星陨锻造'],
 ];
 const tierName = (lvl) => TIERS.filter(([l]) => lvl >= l).pop()[1];
 
 /** Affixes: k = stat key, r = roll range at ilvl 1 (scaled by level), slots that may roll it. */
 export const AFFIXES = {
+  eliteDmg:{name:'对精英与首领伤害（上限 20%）',r:[2,4],scale:.12,pct:true,minLevel:18,slots:['weapon','gloves','ring','amulet']},
+  exposedDmg:{name:'对破绽中首领伤害（上限 20%）',r:[3,6],scale:.12,pct:true,minLevel:18,slots:['weapon','gloves','offhand']},
+  hazardResist:{name:'首领场地减伤（上限 18%）',r:[2,4],scale:.08,pct:true,minLevel:18,slots:['chest','boots','amulet']},
+  fireDmg:{name:'火焰伤害（上限 25%）',r:[3,6],scale:.15,pct:true,minLevel:18,cls:['mage'],slots:['weapon','offhand','ring']},
+  coldDmg:{name:'冰霜伤害（上限 25%）',r:[3,6],scale:.15,pct:true,minLevel:18,cls:['mage'],slots:['weapon','offhand','ring']},
+  boltDmg:{name:'雷电伤害（上限 25%）',r:[3,6],scale:.15,pct:true,minLevel:18,cls:['mage'],slots:['weapon','offhand','ring']},
+  holyDmg:{name:'神圣伤害（上限 25%）',r:[3,6],scale:.15,pct:true,minLevel:18,cls:['paladin'],slots:['weapon','offhand','ring']},
+  boneDmg:{name:'白骨与暗影伤害（上限 25%）',r:[3,6],scale:.15,pct:true,minLevel:18,cls:['necro'],slots:['weapon','offhand','ring']},
   str: { name: '力量', r: [2, 5], scale: 0.8 },
   dex: { name: '敏捷', r: [2, 5], scale: 0.8 },
   int: { name: '智力', r: [2, 5], scale: 0.8 },
@@ -74,6 +85,14 @@ export const AFFIXES = {
  * They only drop in the field (elites, bosses, rare chance from normal monsters at higher levels).
  */
 export const LEGENDARIES = [
+  {id:'warmmantle',name:'余火守夜衣',base:'channelrobe',flag:'warmmantle',episode:6,power:'寒脊暴雪、冰枪及安魂场地伤害降低 20%；可与暖誓经文叠加。'},
+  {id:'thawseal',name:'融誓指环',base:'ring',flag:'thawseal',episode:6,power:'对处于收招或安魂中断破绽中的寒脊首领额外造成 12% 伤害。'},
+  {id:'requiemgrip',name:'噤声者之握',base:'gloves',flag:'requiemgrip',episode:6,power:'打断安魂曲时回复 18 点职业资源（冷却 8 秒）。'},
+  {id:'apexwarrior',name:'终焉 · 裂世之斧',base:'axe',cls:'warrior',flag:'apexwarrior',apex:true,episode:6,power:'主动命中追加 18% 余响伤害，并获得 6% 最大生命护盾；共用冷却 8 秒，余响最高为目标生命的 1.5%。'},
+  {id:'apexranger',name:'终焉 · 猎星长弓',base:'bow',cls:'ranger',flag:'apexranger',apex:true,episode:6,power:'主动命中追加 18% 余响伤害，并标记目标 3 秒，使其受到的伤害提高 10%；共用冷却 8 秒，余响最高为目标生命的 1.5%。'},
+  {id:'apexmage',name:'终焉 · 初火权杖',base:'staff',cls:'mage',flag:'apexmage',apex:true,episode:6,power:'主动命中追加 18% 余响伤害，并回复 8 点法力；共用冷却 8 秒，余响最高为目标生命的 1.5%。'},
+  {id:'apexpaladin',name:'终焉 · 黎明裁决',base:'mace',cls:'paladin',flag:'apexpaladin',apex:true,episode:6,power:'主动命中追加 18% 余响伤害，并回复 3% 最大生命；共用冷却 8 秒，余响最高为目标生命的 1.5%。'},
+  {id:'apexnecro',name:'终焉 · 无声挽歌',base:'scythe',cls:'necro',flag:'apexnecro',apex:true,episode:6,power:'主动命中追加 18% 余响伤害，并回复 8 点精魂；共用冷却 8 秒，余响最高为目标生命的 1.5%。'},
   {id:'tideboots',name:'踏潮者的旧靴',base:'boots',flag:'tideboots',episode:5,power:'潮浪、裂流与葬海钟域伤害降低 25%。'},
   {id:'hookgrasp',name:'断锚者之握',base:'gloves',flag:'hookgrasp',episode:5,power:'对处于破灯或收潮破绽中的港口敌人额外造成 15% 伤害。'},
   {id:'tideeye',name:'沉灯之眼',base:'ring',flag:'tideeye',episode:5,power:'打断引潮或钩链后回复 20 点职业资源（冷却 8 秒）。'},
@@ -102,12 +121,12 @@ export const LEGENDARIES = [
   { id: 'bloodring', name: '血契之戒', base: 'ring', flag: 'bloodring', power: '命中暴击时回复 2% 最大生命（每 1.2 秒最多一次）。' },
 ];
 
-function rollAffixes(it, n) {
-  const pool = Object.entries(AFFIXES).filter(([, a]) => !a.slots || a.slots.includes(it.slot));
-  const used = new Set();
+function rollAffixes(it, n, affinity) {
+  const pool = Object.entries(AFFIXES).filter(([, a]) => (!a.minLevel||it.ilvl>=a.minLevel)&&(!a.slots||a.slots.includes(it.slot))&&(!affinity||!a.cls||a.cls.includes(affinity)));
+  const used = new Set(it.affixes.map(a=>a.k));
   while (it.affixes.length < n && used.size < pool.length) {
-    const [k, a] = pick(pool);
-    if (used.has(k)) continue;
+    const available=pool.filter(([k])=>!used.has(k));if(!available.length)break;
+    const [k, a] = pick(available);
     used.add(k);
     const lvlMul = 1 + (it.ilvl - 1) * a.scale / Math.max(1, a.r[1]);
     let v = rnd(a.r[0], a.r[1]) * lvlMul * RARITY[it.rarity].mult;
@@ -116,14 +135,15 @@ function rollAffixes(it, n) {
   }
 }
 
-export function makeItem(baseKey, { ilvl = 1, rarity = 'common', legendary = null } = {}) {
+export function makeItem(baseKey, { ilvl = 1, rarity = 'common', legendary = null, affinity } = {}) {
+  ilvl=Math.max(1,Math.min(30,Math.floor(ilvl)));
   const b = BASES[baseKey];
   const it = { uid: uid++, base: baseKey, slot: b.slot, ilvl, rarity, affixes: [], icon: b.icon };
   if (b.dmg) { const avg = b.dmg * (1 + (ilvl - 1) * 0.16) * RARITY[rarity].mult; it.dmg = [Math.round(avg * 0.75), Math.round(avg * 1.25)]; }
   if (b.armor) it.armor = Math.round(b.armor * (1 + (ilvl - 1) * 0.18) * RARITY[rarity].mult);
   if (b.fixed) for (const [k, v] of Object.entries(b.fixed)) it.affixes.push({ k, v: Math.round(v * (1 + (ilvl - 1) * 0.15)) });
   const [a0, a1] = RARITY[rarity].affixes;
-  rollAffixes(it, it.affixes.length + ri(a0, a1));
+  rollAffixes(it, it.affixes.length + ri(a0, a1),affinity);
   if (legendary) { it.legendary = legendary.id; it.flag = legendary.flag; it.power = legendary.power; it.name = legendary.name; }
   else it.name = (rarity === 'common' ? tierName(ilvl) : rarity === 'magic' ? pick(['锋锐的', '坚韧的', '幽光', '迅捷的', '炽热的', '寒霜']) : pick(['暮色', '亡誓', '血棘', '灰冠', '霜魂', '铁誓', '夜鸦', '骸王'])) + b.name;
   it.price = Math.round((12 + ilvl * 9) * { common: 1, magic: 2.2, rare: 4.5, legendary: 9 }[rarity] * (b.dmg ? 1.4 : 1));
@@ -131,8 +151,8 @@ export function makeItem(baseKey, { ilvl = 1, rarity = 'common', legendary = nul
 }
 
 /** Bases usable by a class (weapons/offhands filtered, armour always). */
-export function basesFor(cls) {
-  return Object.entries(BASES).filter(([, b]) => !b.cls || b.cls.includes(cls)).map(([k]) => k);
+export function basesFor(cls, level=30) {
+  return Object.entries(BASES).filter(([, b]) => (!b.minLevel||level>=b.minLevel)&&(!b.cls||b.cls.includes(cls))).map(([k]) => k);
 }
 
 export function canEquip(cls, it) {
@@ -141,31 +161,41 @@ export function canEquip(cls, it) {
 }
 
 /** Random drop. quality: 0 normal monster, 1 elite, 2 boss. */
-export function rollDrop(cls, ilvl, quality = 0, episode = 1) {
+export const APEX_DROP_RATES=[.0003,.0015,.006];
+export function makeApexItem(cls,ilvl){
+ const L=LEGENDARIES.find(l=>l.apex&&l.cls===cls);const it=makeItem(L.base,{ilvl:Math.min(30,Math.max(20,ilvl+2)),rarity:'legendary',legendary:L,affinity:cls});
+ it.apex=true;it.dmg=it.dmg.map(n=>Math.round(n*1.08));
+ const main={warrior:'str',ranger:'dex',mage:'int',paladin:'str',necro:'int'}[cls];if(!it.affixes.some(a=>a.k===main))it.affixes[0]={k:main,v:1};
+ for(const a of it.affixes){const A=AFFIXES[a.k];a.v=Math.round(A.r[1]*(1+(it.ilvl-1)*A.scale/Math.max(1,A.r[1]))*1.5*10)/10;}
+ return it;
+}
+/** Apex roll is once per eligible enemy, never a chest, shop, summon or secondary drop. */
+export function rollDrop(cls, ilvl, quality = 0, episode = 1, {apexEligible=false}={}) {
+  if(apexEligible&&episode>=6&&ilvl>=18&&Math.random()<APEX_DROP_RATES[Math.max(0,Math.min(2,quality))])return makeApexItem(cls,ilvl);
   const r = Math.random() * 100;
   const leg = quality === 2 ? 100 : quality === 1 ? 35 : ilvl >= 4 ? 1.2 : 0.4;
   if (Math.random() * 100 < leg) {
-    const pool = LEGENDARIES.filter((l) => (!l.episode || l.episode<=episode) && (!l.cls || l.cls === cls || Math.random() < 0.25) && (quality === 2 || !l.boss));
+    const pool = LEGENDARIES.filter((l) => !l.apex && (!BASES[l.base].minLevel||ilvl+1>=BASES[l.base].minLevel) && (!l.episode || l.episode<=episode) && (!l.cls || l.cls === cls || Math.random() < 0.25) && (quality === 2 || !l.boss));
     const chapter=pool.filter(l=>(l.episode??1)===episode);
     const L=pick(quality===2&&chapter.length?chapter:pool);
-    return makeItem(L.base, { ilvl: ilvl + 1, rarity: 'legendary', legendary: L });
+    return makeItem(L.base, { ilvl: ilvl + 1, rarity: 'legendary', legendary: L,affinity:cls });
   }
   const rarity = quality >= 1 ? (r < 60 ? 'rare' : 'magic') : r < 50 ? 'common' : r < 85 ? 'magic' : 'rare';
   const own = Math.random() < 0.7;
-  const bases = own ? basesFor(cls) : Object.keys(BASES);
-  return makeItem(pick(bases), { ilvl, rarity });
+  const bases = own ? basesFor(cls,ilvl) : Object.keys(BASES).filter(k=>!BASES[k].minLevel||ilvl>=BASES[k].minLevel);
+  return makeItem(pick(bases), { ilvl, rarity,affinity:own?cls:undefined });
 }
 
 /** Shop stock: commons and a few magic items around the player's level for the player's class. */
 export function shopStock(cls, lvl) {
   const out = [];
-  const bases = basesFor(cls);
+  const bases = basesFor(cls,lvl);
   const weapons = bases.filter((b) => BASES[b].slot === 'weapon');
   const offs = bases.filter((b) => BASES[b].slot === 'offhand');
   for (const b of weapons) out.push(makeItem(b, { ilvl: lvl, rarity: 'common' }));
   for (const b of offs) out.push(makeItem(b, { ilvl: lvl, rarity: 'common' }));
-  for (const b of ['helm', 'hood', 'chest', 'robe', 'leather', 'gloves', 'boots']) out.push(makeItem(b, { ilvl: lvl, rarity: 'common' }));
-  for (let i = 0; i < 4; i++) out.push(makeItem(pick([...weapons, 'amulet', 'ring', 'boots', 'gloves', 'helm']), { ilvl: lvl, rarity: 'magic' }));
+  for (const b of bases.filter(b=>!['weapon','offhand','amulet','ring'].includes(BASES[b].slot))) out.push(makeItem(b, { ilvl: lvl, rarity: 'common' }));
+  for (let i = 0; i < 4; i++) out.push(makeItem(pick([...weapons, 'amulet', 'ring', 'boots', 'gloves', 'helm']), { ilvl: lvl, rarity: 'magic',affinity:cls }));
   return out;
 }
 

@@ -477,6 +477,38 @@
       "gain": 0.7,
       "wet": 0.4,
       "pitch": 0.012
+    },
+    "w_wind": {
+      "files": [
+        "episode6/wind.wav"
+      ],
+      "gain": 0.65,
+      "wet": 0.3,
+      "pitch": 0.03
+    },
+    "w_ice": {
+      "files": [
+        "episode6/ice.wav"
+      ],
+      "gain": 0.65,
+      "wet": 0.3,
+      "pitch": 0.03
+    },
+    "w_crack": {
+      "files": [
+        "episode6/crack.wav"
+      ],
+      "gain": 0.65,
+      "wet": 0.3,
+      "pitch": 0.03
+    },
+    "w_chant": {
+      "files": [
+        "episode6/chant.wav"
+      ],
+      "gain": 0.65,
+      "wet": 0.3,
+      "pitch": 0.03
     }
   },
   "amb": {
@@ -507,6 +539,10 @@
     "amb_sea": {
       "file": "episode5/sea.wav",
       "gain": 0.95
+    },
+    "amb_blizzard": {
+      "file": "episode6/wind.wav",
+      "gain": 0.4
     }
   },
   "music": {

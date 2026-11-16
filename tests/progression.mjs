@@ -55,7 +55,7 @@ console.log('Progression, upgrade transactions, legacy migration, skill budget, 
 
 // Exercise delayed skill effects with real Three.js geometry and a minimal game loop.
 const THREE=await import('three');
-for(const map of ['crypt','salttomb','wreck']) for(const [cls,skills] of Object.entries(CLASS_SKILLS)) for(const rank of [1,3,5]) for(const skill of skills){
+for(const map of ['crypt','salttomb','wreck','monastery']) for(const [cls,skills] of Object.entries(CLASS_SKILLS)) for(const rank of [1,3,5]) for(const skill of skills){
   const effects=[],timers=[],damage=[];
   const enemy={pos:new THREE.Vector3(0,0,3),radius:0.6,scale:1,alive:true,freeze(){},slowFor(){}};
   const noop=()=>{};
@@ -84,7 +84,7 @@ for(const map of ['crypt','salttomb','wreck']) for(const [cls,skills] of Object.
     if(skill.slot===6){if(cls==='necro')assert.equal(game.allies.length,rank>=3?9:7);else assert(damage.length>0);}
   }catch(error){throw new Error(`${map} ${cls} ${skill.id} rank ${rank}: ${error.message}`,{cause:error});}
 }
-console.log('All 35 skills exercised at ranks 1, 3 and 5 with actual crypt/salt-tomb/wreck resource plans, including delayed effects and ultimate summons.');
+console.log('All 35 skills exercised at ranks 1, 3 and 5 with actual crypt/salt-tomb/wreck/monastery resource plans, including delayed effects and ultimate summons.');
 const {Campaign}=await import('../src/game/campaign.js');
 const gates=[],quests=[];
 const cg={player:{level:6,pos:new THREE.Vector3(),gainXp(){}},enemies:[],time:0,cinematic:false,
@@ -169,3 +169,5 @@ await import('./encounter-balance.mjs');
 await import('./harbor.mjs');
 
 await import('./inventory.mjs');
+
+await import("./winter.mjs");

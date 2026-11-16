@@ -43,6 +43,7 @@ function camp() {
   d.trigger('north_road',19,16,{r:3,label:'北行驿道 · 第二集'});
   d.room(11,27,13,28,',');d.trigger('harbor_road',12,28,{r:2.6,label:'南行海路 · 第五集'});
   d.room(1,23,4,25,',');d.trigger('salt_road',1,24,{r:3,label:'西行盐道 · 第四集'});
+  d.room(20,24,23,25,',');d.trigger('winter_road',23,25,{r:3,label:'寒脊山道 · 第六集'});
   d.room(20,20,23,22,',');d.trigger('iron_road',23,21,{r:3,label:'东行山道 · 第三集'});
 
   d.torch(7, 19).torch(17, 19).torch(5, 23, 'W').torch(11, 18, 'W').torch(11, 2, 'W', 0x58d0a8).torch(13, 2, 'N', 0x58d0a8).torch(11, 2, 'N', 0x58d0a8);
@@ -382,4 +383,44 @@ function wreck(){
  d.chest(9,36,{gold:340,potions:['hp','mp'],golden:true}).chest(33,36,{gold:320,potions:['hp']});
  return {id:'wreck',name:'沉船墓场 · 潮汐王座',sub:'断开钟链 · 让第四口钟沉寂',episode:5,floor:'wood',audio:'wreck',def:d,mood:{bg:0x0b1b23,fog:.0075,hemi:[0x8fb8c6,0x354951,1.55],key:[0xa8c8d3,2],exposure:1.25,playerLight:30}};
 }
-export const LEVELS = { camp, crypt, forest, swamp, pass, fortress, saltflat, salttomb, harbor, wreck };
+// ------------------------------------------------------------------ 第六集：寒脊哀歌
+function frostpass(){
+ const d=carve(37,57);d.start={x:18,z:52};
+ d.room(13,47,23,54,',').room(17,39,19,48,',').room(10,32,25,40,',').room(11,25,14,33,',');
+ d.room(10,18,24,26,',').room(20,12,23,19,',').room(12,4,28,13,':').room(17,2,19,5,':');
+ d.room(25,34,31,37,',').room(28,28,31,35,',');
+ d.g[15][20]='#';d.g[15][22]='#';d.g[15][23]='#';d.gate('winter_ascent',21,15);
+ d.trigger('winter_return',18,54,{r:3,label:'返回霜暮营地'}).trigger('winter_intro',18,49,{r:4});
+ for(const [id,x,z]of [['fire_outpost',16,49],['fire_ravine',12,35],['fire_watch',21,22]]){d.trigger(id,x,z,{r:3,label:'接续薪火'});d.deco(x,z,'@winter_brazier',{id});}
+ d.npc('winter_merchant',21,51,{model:'bram',name:'守炉人 · 奥文'}).npc('winter_vera',16,52,{model:'vera',name:'薇拉'});
+ d.trigger('giant_intro',21,12,{bounds:[12,4,28,13]}).trigger('monastery_entry',18,3,{r:3,label:'冰封修道院'});
+ d.trigger('winter_ward',30,29,{r:3,label:'取回暖誓经文'});d.spawn('frostmonk',30,30,{level:19,tag:'winter_ward_guard'});
+ for(const [type,x,z]of [['frostthrall',18,44],['snowraider',19,41],['frostthrall',17,39],['icemaiden',22,36],['snowraider',13,36],['frostmonk',15,33],['frostthrall',11,29],['snowraider',14,28],['frostthrall',15,24],['icemaiden',22,24],['frostmonk',18,20],['snowraider',21,18],['frostthrall',27,35],['icemaiden',29,33],['snowraider',25,10],['frostthrall',14,8]])d.spawn(type,x,z,{level:18});
+ d.spawn('frostgiant',20,8,{tag:'frostgiant',level:19,asleep:true});
+ for(const [x,z]of [[11,50],[25,49],[8,35],[27,38],[8,23],[25,21],[10,8],[30,10]])d.deco(x,z,'@winter_pine');
+ d.deco(27,11,'@winter_ruin',{rot:.3}).deco(10,19,'@winter_ruin',{rot:-.3}).deco(30,28,'@winter_statue');
+ d.deco(14,45,'@winter_crystal').deco(25,32,'@winter_crystal').deco(24,6,'@winter_crystal');
+ d.chest(29,36,{gold:380,potions:['hp','mp'],golden:true}).chest(12,21,{gold:280,potions:['hp']});
+ return {id:'frostpass',episode:6,name:'寒脊山口 · 薪火驿路',sub:'第六集 · 暴雪中的最后一团火',floor:'snow',audio:'winter',def:d,mood:{bg:0x172c3b,fog:.0105,hemi:[0xc7dcea,0x526370,1.7],key:[0xdaeafa,2.1],exposure:1.23,playerLight:28}};
+}
+function monastery(){
+ const d=carve(39,53);d.start={x:19,z:49};
+ d.room(14,44,24,50,':').room(18,36,20,45,':').room(12,28,26,37,':');
+ d.room(7,26,12,35,':').room(26,26,31,35,':');d.room(18,21,20,29,':').room(12,4,26,22,':');
+ d.g[24][18]='#';d.g[24][20]='#';d.gate('winter_choir',19,24);
+ d.trigger('monastery_return',19,51,{r:2.8,label:'寒脊山口'});d.room(18,50,20,51,':');
+ d.npc('winter_scribe',22,47,{model:'roland',name:'失声抄经人 · 伊文'});
+ d.trigger('monastery_intro',19,42,{r:4});
+ for(const [id,x,z]of [['testament_west',8,28],['testament_east',30,28]]){d.trigger(id,x,z,{r:3,label:'阅读遗书残页'});d.deco(x,z,'@winter_archive');}
+ d.trigger('abbess_intro',19,20,{bounds:[12,4,26,22]}).trigger('winter_testament',19,5,{r:3,label:'取回第一代拾钟人的遗书'}).trigger('winter_camp',13,5,{r:3,label:'返回霜暮营地'});
+ d.deco(19,3,'@winter_archive');
+ for(const [type,x,z]of [['frostthrall',18,41],['frostmonk',20,39],['snowraider',15,34],['icemaiden',24,33],['frostthrall',18,31],['frostmonk',10,31],['snowraider',8,33],['icemaiden',9,27],['frostthrall',29,33],['frostmonk',28,30],['icemaiden',30,27],['snowraider',25,29],['frostthrall',18,26],['frostthrall',20,26]])d.spawn(type,x,z,{level:19});
+ d.spawn('winterabbess',19,10,{level:20,tag:'winterabbess',asleep:true});
+ for(const [x,z]of [[15,46],[24,44],[12,33],[26,33]])d.deco(x,z,'@winter_brazier',{lit:true});
+ for(const [x,z]of [[12,9],[26,9],[12,18],[26,18],[7,26],[31,26]])d.deco(x,z,'@winter_statue');
+ d.deco(12,23,'@winter_ruin').deco(26,23,'@winter_ruin').deco(16,7,'@winter_crystal').deco(23,7,'@winter_crystal');
+ d.chest(8,35,{gold:420,potions:['hp','mp'],golden:true}).chest(30,35,{gold:340,potions:['mp']});
+ return {id:'monastery',episode:6,name:'冰封修道院 · 无声圣所',sub:'遗书的名字 · 冬死者的祈祷',floor:'tile',audio:'monastery',def:d,mood:{bg:0x0f2030,fog:.009,hemi:[0xb7cde1,0x343e50,1.65],key:[0xc7ddf3,1.9],exposure:1.2,playerLight:30}};
+}
+
+export const LEVELS = { camp, crypt, forest, swamp, pass, fortress, saltflat, salttomb, harbor, wreck, frostpass, monastery };

@@ -1,10 +1,10 @@
 import {createPortal} from './portal-art.js';
-export const TRANSITIONS={crypt_door:'缄默墓穴',portal:'霜暮营地',north_road:'灰须林',forest_return:'霜暮营地',root_gate:'腐沼祭坛',swamp_return:'黑泽村',swamp_camp:'霜暮营地',iron_road:'石脊关',pass_return:'霜暮营地',fortress_entry:'铁冠要塞',fortress_return:'叛军营地',iron_camp:'霜暮营地',salt_road:'灰盐荒原',salt_return:'霜暮营地',tomb_entry:'沙埋神殿',tomb_return:'灰盐荒原',salt_camp:'霜暮营地',harbor_road:'雾岛港口',harbor_return:'霜暮营地',wreck_entry:'沉船墓场',wreck_return:'雾岛港口',harbor_camp:'霜暮营地'};
+export const TRANSITIONS={crypt_door:'缄默墓穴',portal:'霜暮营地',north_road:'灰须林',forest_return:'霜暮营地',root_gate:'腐沼祭坛',swamp_return:'黑泽村',swamp_camp:'霜暮营地',iron_road:'石脊关',pass_return:'霜暮营地',fortress_entry:'铁冠要塞',fortress_return:'叛军营地',iron_camp:'霜暮营地',salt_road:'灰盐荒原',salt_return:'霜暮营地',tomb_entry:'沙埋神殿',tomb_return:'灰盐荒原',salt_camp:'霜暮营地',harbor_road:'雾岛港口',harbor_return:'霜暮营地',wreck_entry:'沉船墓场',wreck_return:'雾岛港口',harbor_camp:'霜暮营地',winter_road:'寒脊山口',winter_return:'霜暮营地',monastery_entry:'冰封修道院',monastery_return:'寒脊山口',winter_camp:'霜暮营地'};
 export function portalAvailable(g,id){
  const s=g.story;if(!s||g.run?.mode==='boss')return false;
- if(g.run?.mode==='chapter'&&['north_road','iron_road','salt_road','forest_return','pass_return','salt_return','swamp_camp','iron_camp','salt_camp','harbor_road','harbor_return','harbor_camp'].includes(id))return false;
- const f=s.flags??{},second=s.second??{},third=s.third??{},fourth=s.fourth??{},fifth=s.fifth??{};
- const locked={crypt_door:['graveyard','crypt','done'].includes(s.stage),portal:f.counter1||s.stage==='done',north_road:s.stage==='done',root_gate:second.butcher,swamp_camp:second.done,iron_road:second.done,fortress_entry:third.orders,iron_camp:third.done,salt_road:third.done,tomb_entry:fourth.mirrors?.length===2,salt_camp:fourth.done,harbor_road:fourth.done,wreck_entry:fifth.captain,harbor_camp:fifth.done};return id in locked?!!locked[id]:true;
+ if(g.run?.mode==='chapter'&&['north_road','iron_road','salt_road','forest_return','pass_return','salt_return','swamp_camp','iron_camp','salt_camp','harbor_road','harbor_return','harbor_camp','winter_road','winter_return','winter_camp'].includes(id))return false;
+ const f=s.flags??{},second=s.second??{},third=s.third??{},fourth=s.fourth??{},fifth=s.fifth??{},sixth=s.sixth??{};
+ const locked={crypt_door:['graveyard','crypt','done'].includes(s.stage),portal:f.counter1||s.stage==='done',north_road:s.stage==='done',root_gate:second.butcher,swamp_camp:second.done,iron_road:second.done,fortress_entry:third.orders,iron_camp:third.done,salt_road:third.done,tomb_entry:fourth.mirrors?.length===2,salt_camp:fourth.done,harbor_road:fourth.done,wreck_entry:fifth.captain,harbor_camp:fifth.done,winter_road:fifth.done,monastery_entry:sixth.giant,winter_camp:sixth.done};return id in locked?!!locked[id]:true;
 }
 export function updatePortals(lv,dt){
  const g=lv.game;lv.portals??=new Map();

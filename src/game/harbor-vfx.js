@@ -14,11 +14,11 @@ function spray(root,count,color){const m=new T.InstancedMesh(new T.SphereGeometr
 const water=()=>new T.MeshPhysicalMaterial({color:0x1f6879,metalness:.22,roughness:.2,clearcoat:.8,...transparent,opacity:.7});
 
 /** Crimson danger, warm countdown, cyan openings: collision footprints stay visible under spell effects. */
-export function harborTelegraph(g,{kind='disc',origin,dir=V(0,0,1),radius=6,length=22,width=3,duration=1,angle=Math.PI*.85}={}){
+export function harborTelegraph(g,{kind='disc',origin,dir=V(0,0,1),radius=6,length=22,width=3,duration=1,angle=Math.PI*.85,holes=[]}={}){
  const root=new T.Group();root.position.copy(origin);root.rotation.y=Math.atan2(dir.x,dir.z);const lane=kind==='charge',points=[];
  if(lane)points.push([-width/2,0],[width/2,0],[width/2,length],[-width/2,length]);
  else{if(kind==='cleave')points.push([0,0]);const half=kind==='cleave'?angle/2:Math.PI;for(let i=0;i<=64;i++){const a=-half+i/64*half*2;points.push([Math.sin(a)*radius,Math.cos(a)*radius]);}}
- const shape=new T.Shape();points.forEach(([x,z],i)=>i?shape.lineTo(x,z):shape.moveTo(x,z));shape.closePath();const geo=new T.ShapeGeometry(shape),pos=geo.attributes.position;for(let i=0;i<pos.count;i++)pos.setXYZ(i,pos.getX(i),.08,pos.getY(i));geo.computeVertexNormals();
+ const shape=new T.Shape();points.forEach(([x,z],i)=>i?shape.lineTo(x,z):shape.moveTo(x,z));shape.closePath();for(const h of holes){const hole=new T.Path();hole.absarc(h.x??0,h.z??0,h.r,0,TAU,true);shape.holes.push(hole);}const geo=new T.ShapeGeometry(shape),pos=geo.attributes.position;for(let i=0;i<pos.count;i++)pos.setXYZ(i,pos.getX(i),.08,pos.getY(i));geo.computeVertexNormals();
  const mat=new T.ShaderMaterial({uniforms:{time:{value:0},progress:{value:0},extent:{value:lane?length:radius},lane:{value:lane?1:0}},...transparent,
  vertexShader:'varying vec2 p;void main(){p=position.xz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
  fragmentShader:`varying vec2 p;uniform float time,progress,extent,lane;void main(){float d=mix(length(p),p.y,lane)/extent;float fill=1.-smoothstep(progress-.025,progress+.025,d);float rune=pow(.5+.5*sin(p.x*5.+p.y*3.-time*2.),14.);float pulse=.75+.25*sin(time*8.);vec3 color=mix(vec3(.38,.025,.07),vec3(1.25,.25,.07),fill*.7+rune*.2);gl_FragColor=vec4(color,(.12+fill*.16+rune*.05)*pulse);}`});mesh(root,geo,mat);

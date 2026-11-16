@@ -84,3 +84,7 @@
 `episode5/sea.wav`, `surge.wav`, `chain.wav`, `lure.wav`, and `plank.wav` are original deterministic DSP audio generated for this project by `tools/make-harbor-audio.py` (filtered noise, modal tones and envelopes; no sampled third-party recordings). They may be distributed with this game. `h_roar` reuses the already credited `roar_0.mp3` recording above; it does not introduce a new download. These files are loaded only with episode 5 moods/effects.
 
 - 第五集重制：`episode5/impact.wav`、`episode5/doom_bell.wav` 同为本项目 stdlib DSP 原创，分别用于重击与葬海钟域蓄力；无第三方采样。
+
+## 第六集原创音效（2026-11-16）
+
+`episode6/wind.wav`、`ice.wav`、`crack.wav`、`chant.wav` 由项目脚本 `tools/make-winter-audio.py` 使用标准库 DSP 原创合成，没有第三方采样或人声。分别用于暴雪风声、冰晶蓄力、冰裂重击和无词唱诗，按第六集加载。

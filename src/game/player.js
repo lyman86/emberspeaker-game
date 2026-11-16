@@ -103,6 +103,7 @@ export class Player extends Actor {
     const st = this.stats;
     const crit = Math.random() * 100 < st.crit;
     let mul = this.dmgMul;
+    const typed={fire:'fireDmg',ice:'coldDmg',bolt:'boltDmg',holy:'holyDmg',bone:'boneDmg',dark:'boneDmg'}[school];if(typed)mul*=1+Math.min(25,st[typed]??0)/100;
     for (const bf of Object.values(this.buffs)) if (bf.dmg) mul *= 1 + bf.dmg;
     if (school === 'fire' && this.has('emberheart')) mul *= 1.1;
     const v = Math.round((a + Math.random() * (b - a)) * mul * (crit ? 1 + st.critDmg / 100 : 1));
@@ -318,7 +319,7 @@ export class Player extends Actor {
     let v = incomingDamage(dmg,this,attack)*(this.buffs.ironmarch?.9:1);
     if (this.shield > 0) {
       if (this.has('aegis')) v *= 0.8;
-      const ab = Math.min(this.shield, v); this.shield -= ab; v -= ab; this.shieldHit(from);
+      const ab = Math.min(this.shield, v); this.shield -= ab;this._apexShield=Math.max(0,(this._apexShield??0)-ab); v -= ab; this.shieldHit(from);
       if (this.shield <= 0) { this.showShield(false); delete this.buffs.shield; }
       if (v <= 0) { g.ui.number(this.pos, '吸收', 'info'); return; }
     }
@@ -360,9 +361,11 @@ export class Player extends Actor {
     const current=this.equip[it.slot];
     const profile=equip=>{
       const p=Object.assign(Object.create(Player.prototype),{C:this.C,cls:this.cls,level:this.level,equip,buffs:{},game:{}});p.recalc();const st=p.stats;
-      const attack=p.dmgMul*(1+Math.min(100,st.crit)*st.critDmg/10000)*p.atkSpeed*Math.pow(1/(1-Math.min(40,st.cdr)/100),.35);
+      const affinity=this.cls==='mage'?((st.fireDmg??0)+(st.coldDmg??0)+(st.boltDmg??0))/3:this.cls==='paladin'?(st.holyDmg??0):this.cls==='necro'?(st.boneDmg??0):0;
+      const context=1+(Math.min(20,st.eliteDmg??0)*.35+Math.min(20,st.exposedDmg??0)*.2+Math.min(25,affinity)*.4)/100;
+      const attack=context*p.dmgMul*(1+Math.min(100,st.crit)*st.critDmg/10000)*p.atkSpeed*Math.pow(1/(1-Math.min(40,st.cdr)/100),.35);
       const recovery=st.regen*.35+Math.min(st.lifeHit,p.maxHp*.015)/.65;
-      const defence=p.maxHp/(1-p.dr)*(1+Math.min(.15,recovery/p.maxHp*3));
+      const defence=p.maxHp/(1-p.dr)/(1-Math.min(18,st.hazardResist??0)*.004)*(1+Math.min(.15,recovery/p.maxHp*3));
       const utility=Math.pow(1+st.move/100,.15)*Math.pow(1+st.resRegen/Math.max(5,Math.abs(this.C.res.regen)),.1)*Math.pow(p.maxMp/this.C.res.max,.05);
       return {attack,defence,score:Math.pow(attack,.6)*Math.pow(defence,.4)*utility};
     };
@@ -476,6 +479,7 @@ export class Player extends Actor {
 
   update(dt) {
     const g = this.game, st = this.stats;
+    if(this._apexShieldUntil&&g.time>=this._apexShieldUntil){this.shield=Math.max(0,this.shield-(this._apexShield??0));this._apexShieldUntil=0;this._apexShield=0;if(!this.shield)this.showShield(false);}
     this._updateSwing(dt);
     this._updateAegis(dt);
     for (const k in this.cds) if (this.cds[k] > 0) this.cds[k] -= dt;

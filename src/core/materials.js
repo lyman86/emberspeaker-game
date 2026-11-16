@@ -5,6 +5,7 @@ import * as THREE from 'three';
  * arm = ambient occlusion (R), roughness (G), metalness (B).
  */
 export const PBR_SETS = {
+  snow:{id:'brown_mud_rocks_01',tint:0xe4eff4},iceStone:{id:'monastery_stone_floor',tint:0xb9cddd},iceWall:{id:'medieval_blocks_02',tint:0xc1d4e2},
   wetDock:{id:'weathered_brown_planks',tint:0x8e9c91},
   wetStone:{id:'slate_floor_03',tint:0x9eaba6},
   saltSand:{id:'brown_mud_rocks_01',tint:0xd6c49b,pom:.02},
@@ -79,6 +80,14 @@ export class Materials {
       m.customProgramCacheKey=()=> 'harbor-wet-stone-v1';
     }
     if (S.pom && this.pom !== false) addParallax(m, S.pom);
+    if(name==='snow'){
+      m.roughness=.94;m.metalness=0;m.normalScale.set(.45,.45);
+      m.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <alphamap_fragment>',`#include <alphamap_fragment>
+        float snowLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+        diffuseColor.rgb=mix(vec3(.34,.43,.52),vec3(.7,.81,.88),smoothstep(.01,.4,snowLuma));`);};
+      m.customProgramCacheKey=()=> 'winter-snow-v1';
+    }
+    if(name==='iceStone'){m.roughness=.48;m.metalness=.08;m.normalScale.set(.7,.7);}
     if(name==='saltSand'){
       const before=m.onBeforeCompile;
       m.onBeforeCompile=sh=>{before(sh);sh.fragmentShader=sh.fragmentShader.replace('#include <alphamap_fragment>',`#include <alphamap_fragment>

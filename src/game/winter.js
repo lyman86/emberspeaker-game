@@ -1,0 +1,49 @@
+import * as T from 'three';
+import {bossAttack} from './combat.js';
+import {inLane,inSector} from './stag.js';
+import {harborTelegraph} from './harbor-vfx.js';
+import {iceBurst,winterCastFx} from './winter-vfx.js';
+const V=(x=0,z=0)=>new T.Vector3(x,0,z),targets=e=>[e.game.player,...e.game.allies??[]].filter(a=>a.alive);
+export function winterMitigation(g,a){return(g.story.sixth?.ward?.8:1)*(a.has?.('warmmantle')?.8:1);}
+function hit(e,a,damage,kind='heavy',cold=false){const g=e.game;if(g.cinematic||!a.alive||a.invuln>0||a.buffs?.divineWings)return;const power=e.type==='winterabbess'?[1.12,1.18,1.24][(e.winter?.cast?.phase??e.winter?.phase??1)-1]:1,scale=power*(cold?winterMitigation(g,a):1),before=a.hp;a.hurt(damage*scale*(a===g.player?1:.6),e.pos,{...bossAttack(e,kind),scale});if(cold&&a===g.player&&a.hp<before){a.chillStacks=Math.min(3,(a.chillUntil>g.time?a.chillStacks??0:0)+1);a.chillUntil=g.time+5;}}
+export function winterPoise(e,value){const s=e.winter,c=s?.cast;if(c?.kind!=='requiem'||c.t>=c.windup)return;s.poise=(s.poise??0)+value;if(s.poise<1)return;for(const w of c.warnings)w.stop();s.cast=null;s.rest=3.5;s.exposed=3.5;s.poise=0;e.intent='安魂曲中断 · 破绽伤害 +25%';e.play('Hit_A',{once:true,restart:true});iceBurst(e.game,e.pos,4);e.game.audio.play('w_crack',e.pos,.8);e.game.ui.toast('安魂曲已打断 · 趁机反击');if(e.game.player.has?.('requiemgrip')&&(e.game.player._requiemAt??0)<=e.game.time){e.game.player._requiemAt=e.game.time+8;e.game.player.gainRes(18);}}
+export function winterDamage(e,amount,opts,g){if(e.T.episode!==6)return amount;let m=1;const pal=opts.pal??'steel';if(pal==='fire')m*=1.15;if(pal==='ice')m*=.85;const c=e.winter?.cast;if(e.type==='winterabbess'){if(c?.kind==='requiem'&&c.t<c.windup&&!opts.quiet&&!opts.ally)winterPoise(e,amount/(e.maxHp*.012));m*=e.winter?.exposed>0?1.25:.9;}else if(e.winter?.exposed>0)m*=1.25;if(g.player.has?.('thawseal')&&e.winter?.exposed>0)m*=1.12;return Math.max(1,Math.round(amount*m));}
+function start(e,kind){
+ const g=e.game,s=e.winter,origin=e.pos.clone(),dir=g.player.pos.clone().sub(origin).setY(0).normalize();if(!dir.lengthSq())dir.set(0,0,1);
+ const c={kind,origin,dir,t:0,phase:s.phase,windup:{cleave:1.15,lances:1.55,requiem:2.2,procession:1.7,whiteout:2.4,charge:1.3}[kind],active:{cleave:.3,lances:.45,requiem:3.2,procession:.6,whiteout:5.2,charge:.5}[kind],recover:1.4,warnings:[],hit:new Set(),tick:0,radius:kind==='requiem'?14:8.5,inner:4.5,width:kind==='charge'?5:3.4,length:kind==='charge'?16:26};
+ const warn=o=>c.warnings.push(harborTelegraph(g,{...o,duration:c.windup}));
+ if(kind==='lances'){const side=V(dir.z,-dir.x);c.lanes=[-7,0,7].map(n=>({origin:origin.clone().addScaledVector(side,n),dir:dir.clone(),length:c.length}));for(const l of c.lanes)warn({kind:'charge',...l,width:c.width});}
+ else if(kind==='procession'){c.lanes=Array.from({length:6},(_,i)=>{const a=Math.atan2(dir.x,dir.z)+i*Math.PI/3;return {origin,dir:V(Math.sin(a),Math.cos(a)),length:c.length};});for(const l of c.lanes)warn({kind:'charge',...l,width:c.width});}
+ else if(kind==='whiteout'){c.safeRadius=5.5;c.refuges=[-10,10].map(x=>{const p=g.level.nearestFree(e.home.x+x,e.home.z+9,1);return p?V(p.x,p.z):origin.clone().add(V(x,9));});warn({kind:'disc',origin,radius:30,holes:c.refuges.map(p=>({x:p.x-origin.x,z:p.z-origin.z,r:c.safeRadius}))});e.intent='白夜葬雪 · 落雪前进入暖金避风圈';}
+ else{warn({kind:kind==='charge'?'charge':kind==='cleave'?'cleave':'disc',origin,dir,radius:c.radius,angle:Math.PI*.9,width:c.width,length:c.length,holes:kind==='requiem'?[{r:c.inner}]:[]});if(kind==='requiem')g.fx.glyph(origin,{tex:'magic2',color:[1.3,.9,.4],r:c.inner,dur:c.windup+c.active,spin:0});}
+ s.cast=c;s.poise=0;e.facing=Math.atan2(dir.x,dir.z);e.playTimed?.(kind==='cleave'||kind==='charge'?'attack':'Spellcast_Raise',c.windup,{restart:true});winterCastFx(g,e,c);g.audio.play(kind==='requiem'||kind==='whiteout'?'w_chant':'w_ice',origin,.65);
+ e.intent={cleave:'冰棺挥镰 · 绕至侧后',lances:'三重冰枪 · 离开红色直线',requiem:'安魂曲 · 近身避外圈 / 控制打断',procession:'六芒送葬 · 站入冰枪之间',whiteout:'白夜葬雪 · 进入暖金避风圈',charge:'霜足冲撞 · 横移离开直线'}[kind];
+}
+function chief(e,dt){
+ const g=e.game;if(e.asleep||g.cinematic||!g.player.alive)return true;const s=e.winter??={phase:1,index:0,rest:1.3,exposed:0,poise:0};s.exposed=Math.max(0,s.exposed-dt);const phase=e.type==='winterabbess'?(e.hp/e.maxHp>.65?1:e.hp/e.maxHp>.3?2:3):1;
+ if(phase>s.phase){s.phase=phase;g.ui.toast(phase===2?'唱诗厅结霜 · 六芒送葬与白夜葬雪':'冬死誓约 · 暴雪加剧');g.audio.play('w_chant',e.pos,.8);iceBurst(g,e.pos,5);const alive=g.enemies.filter(a=>a.alive&&a.tag==='summon').length;for(let i=alive;i<2;i++){const p=g.level.nearestFree(e.home.x+(i?9:-9),e.home.z+8,.8);if(p)g.spawnEnemy('frostthrall',p.x,p.z,{tag:'summon',level:e.level});}}e.phase=s.phase;
+ const c=s.cast;if(c){c.t+=dt;if(c.t<c.windup)return true;const t=c.t-c.windup;if(!c.fired){c.fired=true;c.warnings.forEach(w=>w.stop());g.audio.play('w_crack',c.origin,.8);g.gfx.addShake(.25);if(['cleave','charge'].includes(c.kind))iceBurst(g,c.origin.clone().addScaledVector(c.dir,4),c.radius*.7);if(c.kind==='charge'){const end=g.level.displacement(e.pos,c.origin.clone().addScaledVector(c.dir,c.length),e.radius);e.pos.copy(end);}}
+  if(t<=c.active){if(['requiem','whiteout'].includes(c.kind)){c.tick-=dt;if(c.tick<=0){c.tick=.95;for(const a of targets(e)){const d=a.pos.distanceTo(c.origin),inside=c.kind==='requiem'?d>c.inner+a.radius&&d<c.radius+a.radius:d<30&&!c.refuges.some(p=>a.pos.distanceTo(p)<=c.safeRadius);if(inside)hit(e,a,70,'hazard',true);}}}
+   else for(const a of targets(e))if(!c.hit.has(a)){const inside=c.kind==='cleave'?inSector(c.origin,c.dir,a.pos,c.radius+a.radius,Math.PI*.9):c.kind==='charge'?inLane(c.origin,c.dir,a.pos,c.length,c.width):c.lanes.some(l=>inLane(l.origin,l.dir,a.pos,l.length,c.width));if(inside){hit(e,a,e.type==='frostgiant'?130:170,'heavy',true);c.hit.add(a);}}}
+  if(t>=c.active&&!c.recovering){c.recovering=true;s.exposed=Math.max(s.exposed,c.recover);e.intent='寒誓破绽 · 反击伤害 +25%';e.play('Idle_B');}if(t>=c.active+c.recover){s.cast=null;s.rest=s.phase===3?.65:1;}return true;
+ }
+ s.rest-=dt;if(s.rest>0){const d=g.player.pos.distanceTo(e.pos);if(d>9){e._walk(g.player.pos.x,g.player.pos.z,dt,e.T.speed);e.locomote('Running_A',e.T.speed);}else{e.face(g.player.pos.x,g.player.pos.z);e.play('Idle_B');}return true;}
+ if(g.player.pos.distanceTo(e.pos)>21){e._walk(g.player.pos.x,g.player.pos.z,dt,e.T.speed);e.locomote('Running_A',e.T.speed);return true;}
+ const rotation=e.type==='frostgiant'?['cleave','charge','cleave']:s.phase===1?['cleave','lances','requiem']:s.phase===2?['procession','requiem','whiteout','lances','cleave']:['whiteout','lances','requiem','procession','cleave'];start(e,rotation[s.index++%rotation.length]);return true;
+}
+export function winterUpdate(e,dt,dist){
+ if(e.T.episode!==6)return false;const g=e.game;if(e.asleep||g.cinematic||!g.player.alive)return true;if(e.T.boss)return chief(e,dt);
+ if(e.frozen>0||e.stagger>0){if(e.winterMinor){e.winterMinor.warning?.stop();e.winterMinor=null;e.winterCd=4;}return false;}
+ e.winterCd=(e.winterCd??3)-dt;const c=e.winterMinor;if(c){c.t+=dt;if(c.t<c.windup)return true;c.warning?.stop();e.winterMinor=null;e.winterCd=e.type==='frostmonk'?9:7;if(e.type==='frostmonk'){if(c.ally?.alive){c.ally.hp=Math.min(c.ally.maxHp,c.ally.hp+c.ally.maxHp*.08);g.fx.pillar(c.ally.pos,'ice',8,3);}}else if(e.type==='snowraider'){e.pos.copy(g.level.displacement(e.pos,c.at,e.radius));iceBurst(g,e.pos,2);for(const a of targets(e))if(a.pos.distanceTo(e.pos)<3)hit(e,a,86,'projectile',true);}else{iceBurst(g,c.at,3);for(const a of targets(e))if(a.pos.distanceTo(c.at)<3)hit(e,a,88,'projectile',true);}return true;}
+ if(e.winterCd<=0&&dist<23&&g.level.clear(e.pos.x,e.pos.z,g.player.pos.x,g.player.pos.z,.2)){
+  if(e.type==='frostmonk'){const ally=g.enemies.filter(a=>a!==e&&a.alive&&!a.T.boss&&a.hp<a.maxHp*.8&&a.pos.distanceTo(e.pos)<12).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];if(ally){e.winterMinor={ally,t:0,windup:2};e.playTimed?.('Spellcast_Raise',2,{restart:true});g.fx.glyph(e.pos,{tex:'magic2',color:[.3,.8,1.3],r:2,dur:2});e.intent='霜祷治疗 · 控制可中断';return true;}}
+  if(e.type==='icemaiden'||e.type==='snowraider'&&dist>4&&dist<12){const at=g.player.pos.clone();if(e.type==='snowraider'){const d=at.clone().sub(e.pos);if(d.length()>7)at.copy(e.pos).addScaledVector(d,7/d.length());}const windup=e.type==='snowraider'?.9:1.2;e.winterMinor={at,t:0,windup,warning:harborTelegraph(g,{kind:'disc',origin:at,radius:3,duration:windup})};e.playTimed?.('attack',windup,{restart:true});return true;}
+ }
+ return false;
+}
+export function winterDeath(g,e){if(e.type!=='frostthrall'||e.tag==='summon')return;const at=e.pos.clone();g.fx.telegraph(at,2.5,1,[1.2,.3,.2]);g.after(1,()=>{iceBurst(g,at,2.5);if(g.player.alive&&!g.cinematic&&g.player.pos.distanceTo(at)<2.5)g.player.hurt(35,at);});}
+export function updateWinterWeather(g,dt){
+ if(g.level.id!=='frostpass'||g.cinematic||!g.player.alive||g.run?.mode==='boss')return;const s=g.level.winterWeather??={t:0,tick:0,warned:false};s.t=(s.t+dt)%30;if(s.t<18)s.warned=false;if(s.t>=18&&!s.warned){s.warned=true;g.ui.toast('山口暴雪将至 · 靠近已点亮的火盆');}
+ const p=g.player,warm=g.level.warmth?.some(f=>f.active&&Math.hypot(f.x-p.pos.x,f.z-p.pos.z)<f.r);if(warm){p.chillUntil=0;p.chillStacks=0;}
+ if(s.t>=21&&s.t<25){s.tick-=dt;if(s.tick<=0){s.tick=1;g.audio.play('w_wind',p.pos,.35);if(!warm){const before=p.hp;p.hurt(28*winterMitigation(g,p),p.pos);if(p.hp<before){p.chillStacks=Math.min(3,(p.chillUntil>g.time?p.chillStacks??0:0)+1);p.chillUntil=g.time+5;}}}}else s.tick=0;
+}

@@ -21,6 +21,7 @@ import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
  */
 
 const LEG_THEME = {
+  apexwarrior:[2.8,.6,.2],apexranger:[.5,2.8,2],apexmage:[2.8,1.3,.4],apexpaladin:[2.6,2.2,1.3],apexnecro:[.7,2.6,1.8],warmmantle:[1.8,.9,.4],thawseal:[.6,1.8,2.8],requiemgrip:[.6,1.8,2.8],
   emberheart: [3.5, 1.1, 0.2], stormcoil: [0.8, 1.6, 4], butcher: [3, 0.25, 0.15], warlord: [3, 0.9, 0.2], windforce: [1, 3, 2.4],
   hawk: [3, 2.2, 0.6], dawn: [3.2, 2.6, 1.2], aegis: [2.6, 2.4, 1.6], deathsbreath: [0.6, 3, 1], boneweaver: [0.9, 3, 1.4],
   silentbell: [2, 0.8, 3.4], gravewalker: [0.7, 2.6, 0.9], bloodring: [3, 0.2, 0.25],
@@ -36,7 +37,7 @@ export function visualKind(it) {
   if (b.slot === 'chest') return 'pauldron';
   if (b.slot === 'gloves') return 'bracer';
   if (b.slot === 'boots') return 'greave';
-  return it.base;
+  return b.visual??it.base;
 }
 
 export class Gear {
@@ -337,7 +338,7 @@ export class Gear {
   }
 
   _pauldron(add, K, it) {
-    const base = it.base, r = K.r;
+    const base = BASES[it.base].visual??it.base, r = K.r;
     if (base === 'robe') { // cloth mantle with trim
       const th = Math.PI * 0.5;
       const g = new THREE.SphereGeometry(0.115, 20, 12, 0, Math.PI * 2, 0, th); g.scale(1.05, 0.8, 1.05);
@@ -571,8 +572,8 @@ export class Gear {
     if (this.icons.has(key)) return this.icons.get(key);
     this._iconSetup();
     const K=this._look(it);
-    const full=inventoryModel(it,{...K,steel:this.metal(it.rarity==='legendary'?'silver':'steel'),sole:this.leather(0x18171b),
-      cloth:it.base==='robe'?this.cloth(it.rarity==='common'?0x41656c:it.rarity==='magic'?0x3f4e83:0x693b59):K.cloth,
+    const full=inventoryModel({...it,base:BASES[it.base].visual??it.base},{...K,steel:this.metal(it.rarity==='legendary'?'silver':'steel'),sole:this.leather(0x18171b),
+      cloth:(BASES[it.base].visual??it.base)==='robe'?this.cloth(it.rarity==='common'?0x41656c:it.rarity==='magic'?0x3f4e83:0x693b59):K.cloth,
       leather:this.leather(it.rarity==='common'?0x815c39:0x503a2b)});
     const m=full??this.model(it);
     const kind = visualKind(it), b = BASES[it.base];

@@ -98,3 +98,10 @@ PROFILES.barnacle={file:'elite',map:PROFILES.elite.map};
 PROFILES.tidewitch={file:'mage',map:PROFILES.mage.map};
 PROFILES.hookcaptain={file:'bram',map:{...SOLDIER,Spellcast_Raise:'ss_powerup'}};
 PROFILES.angler={file:'boss',map:PROFILES.boss.map};
+
+PROFILES.frostthrall={file:'warrior',map:PROFILES.warrior.map};
+PROFILES.snowraider={file:'bram',map:PROFILES.raider.map};
+PROFILES.icemaiden={file:'vera',map:PROFILES.saltqueen.map};
+PROFILES.frostmonk={file:'mage',map:{...PROFILES.mage.map,Spellcast_Raise:'summon'}};
+PROFILES.frostgiant={file:'elite',map:{...PROFILES.elite.map,Idle_B:'m_idle',Spellcast_Raise:'m_roar'}};
+PROFILES.winterabbess={file:'vera',map:PROFILES.saltqueen.map};

@@ -1,3 +1,5 @@
+import {winterUpdate,winterPoise,winterDeath} from './winter.js';
+import {dressWinterEnemy} from './winter-enemies-art.js';
 import {harborUpdate,harborPoise,brinePool} from './harbor.js';
 import {dressHarborEnemy} from './harbor-enemies-art.js';
 import {bossAttack} from './combat.js';
@@ -16,6 +18,12 @@ import { PALETTE } from './fx.js';
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 export const ENEMY_TYPES = {
+  frostthrall:{model:'frostthrall',name:'冰壳霜仆',hp:1450,dmg:[60,78],speed:4.4,range:2.8,cd:1.7,xp:420,atkSpeed:1.4,gold:[38,52],episode:6},
+  snowraider:{model:'snowraider',name:'寒脊掠袭者',hp:1700,dmg:[67,87],speed:5.8,range:3,cd:1.6,xp:460,atkSpeed:1.5,gold:[40,56],episode:6},
+  icemaiden:{model:'icemaiden',name:'冰魅',hp:1500,dmg:[62,82],speed:4.7,range:23,keep:15,ranged:true,proj:'ice',cd:2.8,xp:450,atkSpeed:1.4,gold:[41,57],episode:6},
+  frostmonk:{model:'frostmonk',name:'冻尸祷僧',hp:2050,dmg:[65,85],speed:4.3,range:19,keep:13,ranged:true,proj:'ice',cd:3,xp:480,atkSpeed:1.3,gold:[44,60],episode:6},
+  frostgiant:{model:'frostgiant',name:'霜脚巨人 · 厄姆',hp:18000,dmg:[110,145],speed:3.8,range:20,cd:2,xp:1800,atkSpeed:1.3,scale:1.9,radius:1.5,boss:true,tough:true,gold:[400,550],episode:6},
+  winterabbess:{model:'winterabbess',name:'冬死修女长 · 伊瑟拉',hp:84000,dmg:[150,190],speed:3.6,range:24,cd:2.4,xp:3600,atkSpeed:1.2,scale:1.6,radius:1.2,boss:true,tough:true,gold:[1000,1350],episode:6},
   drowned:{model:'drowned',name:'溺亡水手',hp:1080,dmg:[43,58],speed:4.5,range:2.7,cd:1.7,xp:300,atkSpeed:1.4,gold:[28,40],episode:5},
   pirate:{model:'pirate',name:'沉钩海盗',hp:1180,dmg:[48,65],speed:6,range:3,cd:1.5,xp:320,atkSpeed:1.55,gold:[29,42],episode:5},
   barnacle:{model:'barnacle',name:'藤壶甲怪',hp:2050,dmg:[55,75],speed:4.3,range:3.2,cd:1.8,xp:370,atkSpeed:1.3,scale:1.1,tough:true,gold:[34,48],episode:5},
@@ -61,7 +69,7 @@ export class Enemy extends Actor {
   constructor(game, type, x, z, opts = {}) {
     const T = ENEMY_TYPES[type];
     super(game, T.model, { scale: T.scale ?? 1 });
-    this.level=opts.level??({minion:1,warrior:3,rogue:3,mage:4,elite:5,boss:6}[type]??(T.episode===5?17:6));
+    this.level=opts.level??({minion:1,warrior:3,rogue:3,mage:4,elite:5,boss:6}[type]??(T.episode===6?19:T.episode===5?17:6));
     this.T = T; this.type = type; this.name = opts.name??T.name; this.tag = opts.tag;
     this.pos.set(x, 0, z);
     this.home = new THREE.Vector3(x, 0, z);
@@ -84,14 +92,15 @@ export class Enemy extends Actor {
     if(T.episode===3)dressIronEnemy(this);
     if(T.episode===4)dressSaltEnemy(this);
     if(T.episode===5)dressHarborEnemy(this);
+    if(T.episode===6)dressWinterEnemy(this);
     if(type==='stag')addStagCrown(this);if(type==='totem')addTotem(this);
     if (T.boss) { this.phase = 1; this.summons = 0; this.bossT = 2; }
   }
 
-  voice() {if(this.T.episode===5)return this.type==='angler'?'h_roar':this.type==='tidewitch'?'h_lure':'rattle';if(this.T.episode===3)return 'warcry';return ({villager:'e_villager',goblin:'e_goblin',werewolf:'e_wolf',witch:'e_witch',butcher:'e_butcher',stag:'e_wolf'})[this.type]??'rattle';}
-  dispose(){this.harborArtDispose?.();this.saltArtDispose?.();this.ironArtDispose?.();this.plagueArtDispose?.();const geos=new Set();for(const o of this.encounterArt??[]){o.traverse(m=>{if(m.geometry)geos.add(m.geometry);});o.removeFromParent();}for(const geo of geos)geo.dispose();for(const mat of this.encounterMaterials??[])mat.dispose();super.dispose();}
+  voice() {if(this.T.episode===6)return this.type==='winterabbess'?'w_chant':'w_ice';if(this.T.episode===5)return this.type==='angler'?'h_roar':this.type==='tidewitch'?'h_lure':'rattle';if(this.T.episode===3)return 'warcry';return ({villager:'e_villager',goblin:'e_goblin',werewolf:'e_wolf',witch:'e_witch',butcher:'e_butcher',stag:'e_wolf'})[this.type]??'rattle';}
+  dispose(){this.winterArtDispose?.();this.harborArtDispose?.();this.saltArtDispose?.();this.ironArtDispose?.();this.plagueArtDispose?.();const geos=new Set();for(const o of this.encounterArt??[]){o.traverse(m=>{if(m.geometry)geos.add(m.geometry);});o.removeFromParent();}for(const geo of geos)geo.dispose();for(const mat of this.encounterMaterials??[])mat.dispose();super.dispose();}
 
-  stun(sec) { if(this.T.episode===5&&this.T.boss){harborPoise(this,Math.min(.75,sec*.5));return;}if(this.T.episode===4&&this.T.boss){saltPoise(this,Math.min(.75,sec*.45));return;}if(this.T.episode===3&&this.T.boss){ironPoise(this,Math.min(.8,sec*.6));return;}if(this.type==='stag'&&this.alive){stagPoise(this,Math.min(.75,sec*.5));return;}if (!this.alive || this.state === 'dormant' || this.T.boss) return; this.stagger = Math.max(this.stagger, this.T.tough ? sec * 0.4 : sec); if (this.state === 'attack') this.state = 'chase'; this.play('Hit_A', { once: true, restart: true, speed: 0.8, fade: 0.05 }); }
+  stun(sec) {if(this.T.episode===6&&this.T.boss){winterPoise(this,Math.min(.75,sec*.5));return;} if(this.T.episode===5&&this.T.boss){harborPoise(this,Math.min(.75,sec*.5));return;}if(this.T.episode===4&&this.T.boss){saltPoise(this,Math.min(.75,sec*.45));return;}if(this.T.episode===3&&this.T.boss){ironPoise(this,Math.min(.8,sec*.6));return;}if(this.type==='stag'&&this.alive){stagPoise(this,Math.min(.75,sec*.5));return;}if (!this.alive || this.state === 'dormant' || this.T.boss) return; this.stagger = Math.max(this.stagger, this.T.tough ? sec * 0.4 : sec); if (this.state === 'attack') this.state = 'chase'; this.play('Hit_A', { once: true, restart: true, speed: 0.8, fade: 0.05 }); }
 
   slowFor(sec) { if (!this.alive) return; this.slow = Math.max(this.slow, sec); this.tint = new THREE.Color(0.05, 0.25, 0.04); }
 
@@ -100,6 +109,7 @@ export class Enemy extends Actor {
 
   freeze(sec) {
     if (!this.alive) return;
+    if(this.T.episode===6&&this.T.boss)winterPoise(this,Math.min(.6,sec*.3));
     if(this.T.episode===5&&this.T.boss)harborPoise(this,Math.min(.6,sec*.3));
     if(this.T.episode===4&&this.T.boss)saltPoise(this,Math.min(.5,sec*.3));
     if(this.T.episode===3&&this.T.boss)ironPoise(this,Math.min(.4,sec*.2));
@@ -111,7 +121,7 @@ export class Enemy extends Actor {
 
   takeDamage(v, { from, knock = 0, quiet = false, stun = 0 } = {}) {
     if (!this.alive || this.invulnerable) return false;
-    if(this.asleep&&this.T.boss){this.game.story.onTrigger(({stag:'stag_intro',blackknight:'knight_intro',ironking:'king_intro',saltpriest:'priest_intro',saltqueen:'queen_intro',angler:'angler_intro',hookcaptain:'captain_intro'})[this.type]??'boss_intro');return false;}
+    if(this.asleep&&this.T.boss){this.game.story.onTrigger(({winterabbess:'abbess_intro',frostgiant:'giant_intro',stag:'stag_intro',blackknight:'knight_intro',ironking:'king_intro',saltpriest:'priest_intro',saltqueen:'queen_intro',angler:'angler_intro',hookcaptain:'captain_intro'})[this.type]??'boss_intro');return false;}
     this.hp -= v;
     this.flash(1);
     this.lastHit = { from: from ? from.clone?.() ?? { ...from } : null, knock, v, quiet };
@@ -150,7 +160,7 @@ export class Enemy extends Actor {
     g.smoke.emit({ pos: { x: this.pos.x, y: 0.6, z: this.pos.z }, count: 6, radius: 0.5, speed: [0.3, 1.2], life: [0.6, 1.3], size: [1.2, 2.4], c0: [0.4, 0.38, 0.33], c1: [0.2, 0.19, 0.17], alpha: 0.25, grow0: 0.5, grow1: 1.5 });
     if(this.type==='villager')poisonPool(g,this.pos,2.5,5,12);
     if(this.type==='drowned')brinePool(g,this.pos);
-    g.onEnemyKilled(this);
+    winterDeath(g,this);g.onEnemyKilled(this);
   }
 
   awaken(fast = false) {
@@ -178,7 +188,7 @@ export class Enemy extends Actor {
   }
 
   update(dt) {
-    this.saltArtUpdate?.(dt);this.harborArtUpdate?.(dt);
+    this.saltArtUpdate?.(dt);this.harborArtUpdate?.(dt);this.winterArtUpdate?.(dt);
     const g = this.game, T = this.T;
     // target: the player, or a summoned minion that is closer
     let pl = g.player;
@@ -224,6 +234,7 @@ export class Enemy extends Actor {
     const dx = pl.pos.x - this.pos.x, dz = pl.pos.z - this.pos.z, dist = Math.max(0.01, Math.hypot(dx, dz));
     const active = pl.alive && !g.cinematic;
 
+    if(active&&winterUpdate(this,this.T.boss?dt:edt,dist)){this.mixer.timeScale=this.T.boss?1:ts;this.updateVisual(dt,9);return true;}
     if(active&&harborUpdate(this,this.T.boss?dt:edt,dist)){this.mixer.timeScale=ts;this.updateVisual(dt,9);return true;}
     if(active&&saltUpdate(this,this.T.boss?dt:edt,dist)){this.mixer.timeScale=ts;this.updateVisual(dt,9);return true;}
     if(active&&ironUpdate(this,this.T.boss?dt:edt,dist)){this.mixer.timeScale=ts;this.updateVisual(dt,9);return true;}
