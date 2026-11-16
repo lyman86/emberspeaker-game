@@ -395,7 +395,7 @@ function frostpass(){
  d.npc('winter_merchant',21,51,{model:'bram',name:'守炉人 · 奥文'}).npc('winter_vera',16,52,{model:'vera',name:'薇拉'});
  d.trigger('giant_intro',21,12,{bounds:[12,4,28,13]}).trigger('monastery_entry',18,3,{r:3,label:'冰封修道院'});
  d.trigger('winter_ward',30,29,{r:3,label:'取回暖誓经文'});d.spawn('frostmonk',30,30,{level:19,tag:'winter_ward_guard'});
- for(const [type,x,z]of [['frostthrall',18,44],['snowraider',19,41],['frostthrall',17,39],['icemaiden',22,36],['snowraider',13,36],['frostmonk',15,33],['frostthrall',11,29],['snowraider',14,28],['frostthrall',15,24],['icemaiden',22,24],['frostmonk',18,20],['snowraider',21,18],['frostthrall',27,35],['icemaiden',29,33],['snowraider',25,10],['frostthrall',14,8]])d.spawn(type,x,z,{level:18});
+ for(const [type,x,z]of [['frostthrall',18,44],['snowyeti',19,41],['frostthrall',17,39],['icemaiden',22,36],['snowraider',13,36],['frostmonk',15,33],['snowyeti',11,29],['snowraider',14,28],['frostthrall',15,24],['icemaiden',22,24],['frostmonk',18,20],['snowyeti',21,18],['frostthrall',27,35],['icemaiden',29,33],['snowraider',25,10],['snowyeti',14,8]])d.spawn(type,x,z,{level:18});
  d.spawn('frostgiant',20,8,{tag:'frostgiant',level:19,asleep:true});
  for(const [x,z]of [[11,50],[25,49],[8,35],[27,38],[8,23],[25,21],[10,8],[30,10]])d.deco(x,z,'@winter_pine');
  d.deco(27,11,'@winter_ruin',{rot:.3}).deco(10,19,'@winter_ruin',{rot:-.3}).deco(30,28,'@winter_statue');

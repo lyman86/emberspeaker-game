@@ -5,7 +5,7 @@
  * Ambience loops (amb_*) and music tracks (mus_*) from the manifest replace the
  * synthesized wind and generative score.
  */
-const WINTER_SOUNDS=['w_wind','w_ice','w_crack','w_chant'];
+const WINTER_SOUNDS=['w_wind','w_ice','w_crack','w_chant','w_yeti','w_snow'];
 const HARBOR_SOUNDS=['h_surge','h_chain','h_lure','h_plank','h_roar','h_impact','h_doom'];
 const NOTE = (n) => 440 * Math.pow(2, (n - 69) / 12);
 

@@ -1,3 +1,4 @@
+import {createSnowfall} from './snowfall.js';
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 const UP=new T.Vector3(0,1,0),V=(x=0,y=0,z=0)=>new T.Vector3(x,y,z);
@@ -109,11 +110,10 @@ export function winterScenery(lv){
   const geo=new T.SphereGeometry(1,9,6),mat=b.own(new T.MeshStandardMaterial({color:0xd4e5e9,roughness:.96})),banks=new T.InstancedMesh(geo,mat,edge.length),matrix=new T.Matrix4(),q=new T.Quaternion();
   edge.forEach((p,i)=>{q.setFromAxisAngle(UP,p.h*6);matrix.compose(V(p.x,-.04,p.z),q,V(.55+p.h*.65,.12+p.h*.16,.5+p.h*.5));banks.setMatrixAt(i,matrix);});banks.receiveShadow=true;banks.computeBoundingSphere();root.add(banks);b.geos.add(geo);b.instances.push(banks);
  }
- const count=g.low?150:350,flakeGeo=new T.PlaneGeometry(.055,.055),snowMat=b.own(new T.ShaderMaterial({uniforms:{time:{value:0},wind:{value:1}},transparent:true,depthWrite:false,side:T.DoubleSide,
-  vertexShader:`varying vec2 p;varying float a;uniform float time,wind;void main(){p=uv;vec4 v=instanceMatrix*vec4(position,1.);v.y=mod(v.y-time*(1.2+fract(v.x)*.7),18.);v.x+=sin(v.z*.12+time*.3)*.7+mod(time*wind*.2,2.);a=.35+fract(v.z)*.4;gl_Position=projectionMatrix*modelViewMatrix*v;}`,
-  fragmentShader:'varying vec2 p;varying float a;void main(){float d=length(p-.5)*2.;gl_FragColor=vec4(.78,.87,.9,(1.-smoothstep(.25,1.,d))*a);}'}));
- const flakes=new T.InstancedMesh(flakeGeo,snowMat,count),matrix=new T.Matrix4(),q=new T.Quaternion();flakes.frustumCulled=false;
- for(let i=0;i<count;i++){q.setFromEuler(new T.Euler(hash(i,8)*3,hash(i,2)*6,0));matrix.compose(V((hash(i,3)-.5)*42,hash(i,7)*18,(hash(i,11)-.5)*42),q,V(1,1+hash(i,4),1));flakes.setMatrixAt(i,matrix);}root.add(flakes);b.geos.add(flakeGeo);b.instances.push(flakes);
- let elapsed=0,mistAt=0;lv.anim.push(dt=>{if(b.disposed)return false;elapsed+=dt;snowMat.uniforms.time.value=elapsed;const p=g.player?.pos;if(p){flakes.position.set(p.x,0,p.z);mistAt-=dt;if(mistAt<=0){mistAt=g.low?1.4:.9;g.smoke?.emit({pos:{x:p.x-11,y:.3,z:p.z-6},count:1,radius:13,flat:true,speed:[1.1,1.8],up:.05,life:[3,5],size:[4,7],c0:[.42,.52,.58],c1:[.18,.27,.33],alpha:.055,tex:'smoke',grow1:1.7});}}return true;});
+ const snow=createSnowfall({count:g.low?420:900,opacity:lv.id==='monastery'?.3:.74});root.add(snow.mesh);b.geos.add(snow.mesh.geometry);b.own(snow.mesh.material);b.instances.push(snow.mesh);
+ let mistAt=0;lv.anim.push(dt=>{if(b.disposed)return false;const t=lv.winterWeather?.t??0,gust=lv.id==='frostpass'?Math.max(0,Math.min(1,(t-18)/3,(26-t)/2)):0;snow.update(dt,{gust});const p=g.player?.pos;if(p){
+  // Anchor to a fixed world tile: walking never drags the entire snow cloud with the camera.
+  snow.mesh.position.set(Math.round(p.x/16)*16,0,Math.round(p.z/16)*16);snow.mesh.material.uniforms.anchor.value.set(snow.mesh.position.x,snow.mesh.position.z);
+  mistAt-=dt;if(mistAt<=0){mistAt=g.low?1.4:.9;g.smoke?.emit({pos:{x:p.x-11,y:.3,z:p.z-6},count:1,radius:13,flat:true,speed:[.4,.8],up:.05,life:[3,5],size:[4,7],c0:[.42,.52,.58],c1:[.18,.27,.33],alpha:.04,tex:'smoke',grow1:1.7});}}return true;});
  root.userData.winterDispose=b.dispose;lv.group.add(root);
 }

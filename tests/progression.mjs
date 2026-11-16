@@ -171,3 +171,5 @@ await import('./harbor.mjs');
 await import('./inventory.mjs');
 
 await import("./winter.mjs");
+
+await import("./snow-revision.mjs");

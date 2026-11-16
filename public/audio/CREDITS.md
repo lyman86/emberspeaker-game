@@ -88,3 +88,5 @@
 ## 第六集原创音效（2026-11-16）
 
 `episode6/wind.wav`、`ice.wav`、`crack.wav`、`chant.wav` 由项目脚本 `tools/make-winter-audio.py` 使用标准库 DSP 原创合成，没有第三方采样或人声。分别用于暴雪风声、冰晶蓄力、冰裂重击和无词唱诗，按第六集加载。
+
+2026-11-16 雪境修订另增 `episode6/yeti.wav`（雪怪低吼）与 `episode6/snow.wav`（雪地扑击）；同由 `tools/make-winter-audio.py` 原创 DSP 合成，无第三方采样。

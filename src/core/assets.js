@@ -85,7 +85,7 @@ export class Assets {
     this._clips ??= {};
     if (this._clips[key]) return this._clips[key];
     const P = PROFILES[key];
-    const lib = this.gltf.get('mx:anims').animations;
+    const lib = P.animations==='model'?this.gltf.get('mx:'+P.file).animations:this.gltf.get('mx:anims').animations;
     const scene = this.gltf.get('mx:' + P.file).scene;
     let hips = 0;
     const names = new Set();
@@ -102,7 +102,10 @@ export class Assets {
         : base.clone();
       clip.name = game;
       clip.tracks = clip.tracks.filter((t) => names.has(t.name.slice(0, t.name.lastIndexOf('.')))); // some rigs lack finger bones
-      for (const t of clip.tracks) if (/Hips\.position$/.test(t.name)) { t.values = t.values.slice(); for (let i = 0; i < t.values.length; i++) t.values[i] *= ratio; }
+      for (const t of clip.tracks) {
+        if (/Hips\.position$/.test(t.name)&&P.animations!=='model') { t.values=t.values.slice();for(let i=0;i<t.values.length;i++)t.values[i]*=ratio; }
+        if(t.name.endsWith('.position')&&P.lockRoot?.includes(t.name.slice(0,-9))){t.values=t.values.slice();for(let i=0;i<t.values.length;i+=3){t.values[i]=t.values[0];t.values[i+2]=t.values[2];}}
+      }
       clips.push(clip);
       if (rel != null) release[game] = rel;
     }
@@ -118,6 +121,7 @@ export class Assets {
     const id = key + ':' + clipName;
     if (this._gs[id] != null) return this._gs[id];
     const P = PROFILES[key];
+    if(P.animations==='model')return(this._gs[id]=3.6*(P.scale??1)*MX_WORLD_SCALE);
     const clip = this._profileClips(key).clips.find((c) => c.name === clipName);
     if (!clip) return (this._gs[id] = 4);
     const root = SkeletonUtils.clone(this.gltf.get('mx:' + P.file).scene);
@@ -139,7 +143,7 @@ export class Assets {
     }
     speeds.sort((a, b) => a - b);
     const med = speeds.length ? speeds[Math.floor(speeds.length / 2)] : 3;
-    return (this._gs[id] = Math.max(0.5, med) * (P.scale ?? 1) * MX_WORLD_SCALE);
+    return (this._gs[id] = Math.max(0.5, Math.abs(med)) * (P.scale ?? 1) * MX_WORLD_SCALE);
   }
 
   /** Skinned character clone with its own materials and animation clips. key = profile name in models.js */

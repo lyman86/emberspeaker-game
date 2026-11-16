@@ -4,6 +4,7 @@ const V=(x=0,y=0,z=0)=>new T.Vector3(x,y,z),UP=V(0,1,0),TAU=Math.PI*2;
 
 /** Bind-pose tailoring follows the Mixamo joints; no scene-global materials are mutated. */
 export function dressWinterEnemy(e){
+ if(e.type==='snowyeti'||e.type==='frostgiant'){dressFrostCreature(e);return;}
  const file=({frostthrall:'warrior',snowraider:'bram',icemaiden:'vera',frostmonk:'mage',frostgiant:'elite',winterabbess:'vera',frostseal:'mage'})[e.type];
  const source=e.game.assets?.gltf?.get('mx:'+file)?.scene,ownedGeo=new Set(),ownedMat=new Set(),attachments=[];
  let disposed=false,time=0,target;const clothTime={value:0};
@@ -137,4 +138,45 @@ export function dressWinterEnemy(e){
   if(halo){halo.children[0].rotation.z=Math.sin(time*1.2)*.025+(c?.kind==='requiem'||c?.kind==='whiteout'?Math.sin(time*3)*charge*.04:0);}
  };
  e.winterArtDispose=()=>{if(disposed)return;disposed=true;attachments.forEach(o=>o.removeFromParent());ownedGeo.forEach(g=>g.dispose());ownedMat.forEach(m=>m.dispose());};
+}
+
+/** The snow beasts retain their own downloaded skeleton, silhouette and native actions. */
+function dressFrostCreature(e){
+ const giant=e.type==='frostgiant';
+ for(const m of e.mats??[]){
+  m.roughness=giant?.62:.95;m.metalness=giant?.12:0;
+  m.normalMap=e.game.materials?.tex?.rock_surface?.nor??null;m.normalScale?.set(giant?.22:.09,giant?.22:.09);
+  m.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 frostLocal;').replace('#include <begin_vertex>','#include <begin_vertex>\nfrostLocal=position;');sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 frostLocal;').replace('#include <map_fragment>',`#include <map_fragment>
+   float frostLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+   float frostFur=fract(sin(dot(floor(frostLocal*180.),vec3(12.9898,78.233,37.719)))*43758.5453);
+   float frostMask=smoothstep(.12,.55,frostLuma);
+   diffuseColor.rgb=mix(diffuseColor.rgb,vec3(${giant?'.34,.48,.56':'.7,.79,.81'})*(.75+frostLuma*.4),frostMask*.82);
+   diffuseColor.rgb*=.9+frostFur*.13;
+  `);};m.customProgramCacheKey=()=>giant?'frost-cyclops-v1':'snowyeti-fur-v1';m.needsUpdate=true;
+ }
+ // Keep the authored facial rig, then give these creatures a full body and planted limbs.
+ const head=new T.Group();head.name='Frost creature head';for(const child of [...e.model.children])head.add(child);head.scale.setScalar(giant?.48:.5);head.position.y=1.16;e.model.add(head);
+ const body=new T.Group();body.name='Frost creature body';if(giant)body.scale.set(1.12,1.04,.9);e.model.add(body);const geos=new Set(),mats=new Set();let disposed=false,time=0;
+ const material=(color,extra={})=>{const m=new T.MeshStandardMaterial({color,roughness:giant?.65:.95,normalMap:e.game.materials?.tex?.rock_surface?.nor??null,normalScale:new T.Vector2(.12,.12),...extra});m.userData.baseEmissive=m.emissive.clone();mats.add(m);e.mats.push(m);return m;};
+ const fur=material(giant?0x829eaa:0xbbc7c4),shade=material(giant?0x344b58:0x45565c),claw=material(giant?0xaccfdd:0xaaa890,{roughness:.45,metalness:.08});
+ const build=(parent,parts)=>{const batches=new Map();for(const [geo,m,p=[0,0,0],scale=[1,1,1],r=[0,0,0]]of parts){const matrix=new T.Matrix4().compose(V(...p),new T.Quaternion().setFromEuler(new T.Euler(...r)),V(...scale));const g=geo.index?geo.toNonIndexed():geo;g.applyMatrix4(matrix);if(g!==geo)geo.dispose();if(!batches.has(m))batches.set(m,[]);batches.get(m).push(g);}for(const [m,list]of batches){const geo=mergeGeometries(list);list.forEach(g=>g.dispose());geos.add(geo);const mesh=new T.Mesh(geo,m);mesh.castShadow=!e.game.low;mesh.receiveShadow=true;parent.add(mesh);}};
+ const oval=(m,p,s)=>[giant?new T.IcosahedronGeometry(1,1):new T.SphereGeometry(1,14,10),m,p,s];
+ const torso=[oval(fur,[0,.96,0],[.48,.61,.33]),oval(shade,[0,.83,.28],[.28,.35,.09]),oval(fur,[0,1.35,-.11],[.58,.28,.34])];
+ if(giant)for(const side of [-1,1])for(let i=0;i<3;i++)torso.push([new T.ConeGeometry(.13,.42+i*.08,5),claw,[side*(.42+i*.09),1.45+i*.045,-.13],[1,1,1],[0,0,-side*(.35+i*.12)]]);
+ for(let i=0;i<28;i++){const a=i*2.399,y=.6+(i%6)*.13;torso.push([new T.ConeGeometry(giant?.095:.055,giant?.32:.19,5),i%5?fur:claw,[Math.sin(a)*.43,y,Math.cos(a)*.3],[1,1,1],[Math.PI*.9,a,.25*Math.sin(a)]]);}build(body,torso);
+ const limbs=[];
+ for(const side of [-1,1]){
+  const arm=new T.Group();arm.position.set(side*.46,1.36,0);body.add(arm);limbs.push({node:arm,side,arm:true});const parts=[oval(fur,[side*.19,-.23,-.02],[.24,.37,.25]),oval(fur,[side*.3,-.64,.06],[.2,.31,.2]),oval(shade,[side*.32,-.87,.12],[.22,.16,.22])];
+  for(let finger=0;finger<3;finger++)parts.push([new T.ConeGeometry(.035,.2,5),claw,[side*(.19+finger*.13),-.95,.25],[1,1,1],[Math.PI*.65,0,0]]);
+  for(let n=0;n<7;n++)parts.push([new T.ConeGeometry(.06,.24,5),fur,[side*(.16+n%2*.15),-.12-n*.095,-.15],[1,1,1],[Math.PI,0,side*.2]]);build(arm,parts);
+  const leg=new T.Group();leg.position.set(side*.24,.55,0);body.add(leg);limbs.push({node:leg,side,arm:false});const feet=[oval(fur,[0,-.13,0],[.22,.27,.21]),oval(shade,[0,-.38,.11],[.22,.15,.33])];
+  for(let toe=0;toe<3;toe++)feet.push([new T.ConeGeometry(.03,.17,5),claw,[-.12+toe*.12,-.41,.4],[1,1,1],[Math.PI/2,0,0]]);build(leg,feet);
+ }
+ e.winterArtUpdate=dt=>{if(disposed)return;time+=dt;const walking=['Running_A','Running_B','Walking_A','Walking_Backwards'].includes(e.currentName),back=e.currentName==='Walking_Backwards'?-1:1;
+  const minor=e.winterMinor,cast=e.winter?.cast,t=minor?minor.t:cast?.t??0,windup=minor?.windup??cast?.windup??1,charging=(minor||cast)&&t<windup,load=charging?Math.min(1,t/windup):0;
+  body.position.y=minor?.at?Math.sin(load*Math.PI)*.28:walking?Math.abs(Math.sin(time*7))*.025:0;body.rotation.x=charging?-.12*load:0;
+  for(const limb of limbs){limb.node.rotation.x=walking?Math.sin(time*7+limb.side*Math.PI/2)*(limb.arm?.2:.42)*back:limb.arm?-load*.65:0;limb.node.rotation.z=limb.arm?-limb.side*(.07+load*.12):0;}
+  if(!e.alive){body.rotation.x=-Math.min(1.4,(e.t??0)*2);head.rotation.x=-Math.min(.65,(e.t??0));}
+ };
+ e.winterArtDispose=()=>{if(disposed)return;disposed=true;body.removeFromParent();for(const g of geos)g.dispose();for(const m of mats)m.dispose();e.mats=e.mats.filter(m=>!mats.has(m));};
 }

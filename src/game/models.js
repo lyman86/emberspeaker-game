@@ -62,7 +62,7 @@ export const PROFILES = {
   minion: { file: 'minion', map: { ...ZOMBIE, attack: ['z_swipe', 0.1, 0.75, 0.46] } },
   warrior: { file: 'warrior', map: { ...ZOMBIE, attack: ['z_punch', 0.15, 0.75, 0.58] } },
   rogue: { file: 'rogue', map: { ...ZOMBIE, attack: ['throw', 0.1, 0.7, 0.42] } },
-  mage: { file: 'mage', map: { ...ZOMBIE, Idle: 'magic_idle', Running_A: 'run', Running_B: 'run', attack: ['cast1h', 0.28, 0.6, 0.53] } },
+  mage: { file: 'mage', map: { ...ZOMBIE, Idle: 'magic_idle', Running_A: 'run', Running_B: 'run', Walking_Backwards:'walk_back', attack: ['cast1h', 0.28, 0.6, 0.53] } },
   elite: {
     file: 'elite',
     map: { Idle: 'm_idle', Walking_A: 'm_walk', Running_A: 'm_run', Running_B: 'm_run', Hit_A: ['hit', 0, 0.5], Hit_B: ['hit', 0, 0.5], Death_A: 'm_death', Death_B: 'm_death', Taunt: 'm_roar', attack: ['m_swipe', 0.2, 0.8, 0.63] },
@@ -90,7 +90,7 @@ PROFILES.captain={file:'roland',map:SOLDIER};
 PROFILES.blackknight={file:'paladin_pc',builtinGear:[0,2,3],map:SOLDIER};
 PROFILES.ironking={file:'paladin_pc',builtinGear:[0,2,3],map:{...SOLDIER,attack:['ss_power',.1,.85,.5]}};
 
-PROFILES.saltqueen={file:'vera',scale:1.15,map:{Idle:'idle_plain',Idle_B:'idle_plain',Running_A:'run',Walking_A:'m_walk',Hit_A:'hit',Death_A:'fall_back',Death_B:'fall_back',attack:['cast2h',.25,.85,.5],Spellcast_Raise:'area',Spellcast_Summon:'summon'}};
+PROFILES.saltqueen={file:'vera',scale:1.15,map:{Idle:'idle_plain',Idle_B:'idle_plain',Running_A:'run',Walking_A:'m_walk',Walking_Backwards:'walk_back',Hit_A:'hit',Death_A:'fall_back',Death_B:'fall_back',attack:['cast2h',.25,.85,.5],Spellcast_Raise:'area',Spellcast_Summon:'summon'}};
 
 PROFILES.drowned={file:'warrior',map:PROFILES.warrior.map};
 PROFILES.pirate={file:'arissa',map:{...SOLDIER,Idle:'idle_plain',Running_A:'run'}};
@@ -103,5 +103,8 @@ PROFILES.frostthrall={file:'warrior',map:PROFILES.warrior.map};
 PROFILES.snowraider={file:'bram',map:PROFILES.raider.map};
 PROFILES.icemaiden={file:'vera',map:PROFILES.saltqueen.map};
 PROFILES.frostmonk={file:'mage',map:{...PROFILES.mage.map,Spellcast_Raise:'summon'}};
-PROFILES.frostgiant={file:'elite',map:{...PROFILES.elite.map,Idle_B:'m_idle',Spellcast_Raise:'m_roar'}};
 PROFILES.winterabbess={file:'vera',map:PROFILES.saltqueen.map};
+
+const WINTER_CREATURE={Idle:'Idle',Idle_B:'Idle',Running_A:'Walk',Running_B:'Walk',Walking_A:'Walk',Walking_Backwards:'Walk',Hit_A:'HitRecieve',Hit_B:'HitRecieve',Death_A:'Death',Death_B:'Death',attack:['Bite_InPlace',0,1,.55],leap:['Jump',0,1,.8],Spellcast_Raise:['No',0,1,.6]};
+PROFILES.snowyeti={file:'snowyeti',animations:'model',lockRoot:['Body','MonsterArmature'],scale:1,map:WINTER_CREATURE};
+PROFILES.frostgiant={file:'icegiant',animations:'model',lockRoot:['Body','MonsterArmature'],scale:1.25,map:WINTER_CREATURE};

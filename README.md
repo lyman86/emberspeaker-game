@@ -169,3 +169,5 @@ tools/fetch-assets.sh 重新下载素材（npm run assets）
 - 流程、难度与验证边界见 [第四集设计](docs/episode4-design.md)，模式和缓存机制见 [模式与资源加载](docs/modes-and-loading.md)。手机横屏浏览器预览与回归检查已通过，实体手机性能尚未实测。
 
 第六集及后期装备机制见 [寒脊哀歌设计与验证](docs/episode6-design.md)。
+
+雪境怪物新增 Quaternius CC0 雪人与独眼冰巨怪，来源及改造见 [素材记录](public/assets/WINTER-CREATURES-CREDITS.md)。

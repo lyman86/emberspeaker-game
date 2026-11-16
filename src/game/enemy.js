@@ -18,11 +18,12 @@ import { PALETTE } from './fx.js';
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 export const ENEMY_TYPES = {
+  snowyeti:{model:'snowyeti',name:'雪人 · 裂霜兽',hp:2350,dmg:[75,95],speed:4.5,range:3.1,cd:2.1,xp:510,atkSpeed:1.05,scale:1,radius:1.45,gold:[48,65],episode:6},
   frostthrall:{model:'frostthrall',name:'冰壳霜仆',hp:1450,dmg:[60,78],speed:4.4,range:2.8,cd:1.7,xp:420,atkSpeed:1.4,gold:[38,52],episode:6},
   snowraider:{model:'snowraider',name:'寒脊掠袭者',hp:1700,dmg:[67,87],speed:5.8,range:3,cd:1.6,xp:460,atkSpeed:1.5,gold:[40,56],episode:6},
   icemaiden:{model:'icemaiden',name:'冰魅',hp:1500,dmg:[62,82],speed:4.7,range:23,keep:15,ranged:true,proj:'ice',cd:2.8,xp:450,atkSpeed:1.4,gold:[41,57],episode:6},
   frostmonk:{model:'frostmonk',name:'冻尸祷僧',hp:2050,dmg:[65,85],speed:4.3,range:19,keep:13,ranged:true,proj:'ice',cd:3,xp:480,atkSpeed:1.3,gold:[44,60],episode:6},
-  frostgiant:{model:'frostgiant',name:'霜脚巨人 · 厄姆',hp:18000,dmg:[110,145],speed:3.8,range:20,cd:2,xp:1800,atkSpeed:1.3,scale:1.9,radius:1.5,boss:true,tough:true,gold:[400,550],episode:6},
+  frostgiant:{model:'frostgiant',name:'霜脚巨人 · 厄姆',hp:18000,dmg:[110,145],speed:3.8,range:20,cd:2,xp:1800,atkSpeed:1.3,scale:1.3,radius:1.75,boss:true,tough:true,gold:[400,550],episode:6},
   winterabbess:{model:'winterabbess',name:'冬死修女长 · 伊瑟拉',hp:84000,dmg:[150,190],speed:3.6,range:24,cd:2.4,xp:3600,atkSpeed:1.2,scale:1.6,radius:1.2,boss:true,tough:true,gold:[1000,1350],episode:6},
   drowned:{model:'drowned',name:'溺亡水手',hp:1080,dmg:[43,58],speed:4.5,range:2.7,cd:1.7,xp:300,atkSpeed:1.4,gold:[28,40],episode:5},
   pirate:{model:'pirate',name:'沉钩海盗',hp:1180,dmg:[48,65],speed:6,range:3,cd:1.5,xp:320,atkSpeed:1.55,gold:[29,42],episode:5},
@@ -97,7 +98,7 @@ export class Enemy extends Actor {
     if (T.boss) { this.phase = 1; this.summons = 0; this.bossT = 2; }
   }
 
-  voice() {if(this.T.episode===6)return this.type==='winterabbess'?'w_chant':'w_ice';if(this.T.episode===5)return this.type==='angler'?'h_roar':this.type==='tidewitch'?'h_lure':'rattle';if(this.T.episode===3)return 'warcry';return ({villager:'e_villager',goblin:'e_goblin',werewolf:'e_wolf',witch:'e_witch',butcher:'e_butcher',stag:'e_wolf'})[this.type]??'rattle';}
+  voice() {if(this.type==='snowyeti'||this.type==='frostgiant')return 'w_yeti';if(this.T.episode===6)return this.type==='winterabbess'?'w_chant':'w_ice';if(this.T.episode===5)return this.type==='angler'?'h_roar':this.type==='tidewitch'?'h_lure':'rattle';if(this.T.episode===3)return 'warcry';return ({villager:'e_villager',goblin:'e_goblin',werewolf:'e_wolf',witch:'e_witch',butcher:'e_butcher',stag:'e_wolf'})[this.type]??'rattle';}
   dispose(){this.winterArtDispose?.();this.harborArtDispose?.();this.saltArtDispose?.();this.ironArtDispose?.();this.plagueArtDispose?.();const geos=new Set();for(const o of this.encounterArt??[]){o.traverse(m=>{if(m.geometry)geos.add(m.geometry);});o.removeFromParent();}for(const geo of geos)geo.dispose();for(const mat of this.encounterMaterials??[])mat.dispose();super.dispose();}
 
   stun(sec) {if(this.T.episode===6&&this.T.boss){winterPoise(this,Math.min(.75,sec*.5));return;} if(this.T.episode===5&&this.T.boss){harborPoise(this,Math.min(.75,sec*.5));return;}if(this.T.episode===4&&this.T.boss){saltPoise(this,Math.min(.75,sec*.45));return;}if(this.T.episode===3&&this.T.boss){ironPoise(this,Math.min(.8,sec*.6));return;}if(this.type==='stag'&&this.alive){stagPoise(this,Math.min(.75,sec*.5));return;}if (!this.alive || this.state === 'dormant' || this.T.boss) return; this.stagger = Math.max(this.stagger, this.T.tough ? sec * 0.4 : sec); if (this.state === 'attack') this.state = 'chase'; this.play('Hit_A', { once: true, restart: true, speed: 0.8, fade: 0.05 }); }
@@ -265,8 +266,9 @@ export class Enemy extends Actor {
       } else if (T.ranged && los) {
         this.face(pl.pos.x, pl.pos.z);
         if (dist < T.keep - 3) { // back away
-          const moved = g.level.move(this.pos, (-dx / dist) * T.speed * 0.7 * edt, (-dz / dist) * T.speed * 0.7 * edt, this.radius);
-          this.play(moved ? 'Walking_Backwards' : 'Idle');
+          const ox=this.pos.x,oz=this.pos.z;g.level.move(this.pos,(-dx/dist)*T.speed*.7*edt,(-dz/dist)*T.speed*.7*edt,this.radius);
+          const actual=edt>0?Math.hypot(this.pos.x-ox,this.pos.z-oz)/edt:0;
+          if(actual>.1)this.locomote('Walking_Backwards',actual);else this.play('Idle');
         } else this.play('Idle');
       } else if (dist > (T.ranged ? T.keep : T.range * 0.8)) {
         this._walk(pl.pos.x, pl.pos.z, edt, T.speed);
