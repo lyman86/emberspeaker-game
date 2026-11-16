@@ -29,7 +29,7 @@ export class HarborCampaign extends SaltCampaign{
    f.beacons.push(id);g.player.gainXp(180);g.audio.play('h_lure',g.player.pos,.55);g.fx.pillar(g.player.pos,'holy',12,3);
    if(f.beacons.length===2){g.level.openGate('dock_chain');u.banner('船坞锁链已松开','穿过中央栈桥 · 钩手船长在北方');}else u.toast('第一座航灯已亮 · 另一座在港口对岸');this.quest();g.save();return;
   }
-  if(id==='tide_ward'){if(f.ward)return u.prompt('旧领航符已取得');if(!f.wardGuard)return u.prompt('先击败旧灯旁的藤壶守卫');f.ward=true;g.player.gainXp(240);u.banner('获得旧领航符','潮浪和洪流伤害降低 20%');g.save();return;}
+  if(id==='tide_ward'){if(f.ward)return u.prompt('旧领航符已取得');if(!f.wardGuard)return u.prompt('先击败旧灯旁的藤壶守卫');f.ward=true;g.player.gainXp(240);u.banner('获得旧领航符','潮浪、裂流与钟域伤害降低 20%');g.save();return;}
   if(id==='wreck_entry'){if(!f.captain)return u.prompt('沉船航道 · 需要钩手船长的船坞钥匙');await g.loadLevel('wreck');this.quest();return;}
   if(id==='wreck_return'){await g.loadLevel('harbor');this.quest();return;}
   if(id==='wreck_intro'){if(!f.wreck){f.wreck=true;u.banner('沉船墓场','两侧钟链 · 中央潮门 · 潮汐王座');g.save();}return;}
@@ -61,7 +61,7 @@ export class HarborCampaign extends SaltCampaign{
  quest(){
   const g=this.g,f=this.fifth;if(g.run?.mode==='boss')return super.quest();
   if(g.level.id==='harbor')return g.ui.setQuest('沉钩之港 · 雾中航灯',f.beacons.length<2?`清理两侧航灯守军并点亮航灯（${f.beacons.length}/2）。<br>港口东南的旧领航符可减轻潮汐伤害。`:!f.captain?'中央船坞已经开放，击败<b>钩手船长</b>，取得北行航道钥匙。':'沿北方航道前往<b>沉船墓场</b>，找到潮汐之钟。');
-  if(g.level.id==='wreck')return g.ui.setQuest(f.done?'第五集 完 · 海潮退去':'沉钩之港 · 潮汐之钟',f.chains.length<2?`破坏两侧的<b>沉船钟链</b>（${f.chains.length}/2），解除中央潮门。`:!f.bossDead?'击败<b>深渊铃鱼 · 奥尔古</b>。侧身避咬、青色缺口避浪；引灯时控制或集中攻击打断。':!f.done?'靠近北方大钟，用<b>第四枚钟舌</b>完成反鸣。':'可返回营地补给，或重返港口挑战。下一站：寒脊哀歌。');
+  if(g.level.id==='wreck')return g.ui.setQuest(f.done?'第五集 完 · 海潮退去':'沉钩之港 · 潮汐之钟',f.chains.length<2?`破坏两侧的<b>沉船钟链</b>（${f.chains.length}/2），解除中央潮门。`:!f.bossDead?'击败<b>深渊铃鱼 · 奥尔古</b>。侧身避裂颚、青色缺口避浪；离开紫色钟域，引灯时破灯反击。':!f.done?'靠近北方大钟，用<b>第四枚钟舌</b>完成反鸣。':'可返回营地补给，或重返港口挑战。下一站：寒脊哀歌。');
   if(this.fourth.done&&g.level.id==='camp')return g.ui.setQuest(f.done?'潮汐之钟已沉寂':'南行 · 沉钩之港',f.done?'可从南行海路重返港口刷装备、练习破灯与潮浪。下一站：寒脊哀歌。':'<b>南行海路</b>已开放。前往雾岛港口追查铸钟图纸上的运单；建议等级 16。');return super.quest();
  }
 }

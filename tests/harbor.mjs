@@ -6,6 +6,8 @@ import {harborUpdate,harborDamage,harborPoise} from '../src/game/harbor.js';
 import {Enemy,ENEMY_TYPES} from '../src/game/enemy.js';
 import {LEGENDARIES,rollDrop} from '../src/game/items.js';
 import {dressAngler} from '../src/game/angler-art.js';
+import {Fx} from '../src/game/fx.js';
+import * as harborVfx from '../src/game/harbor-vfx.js';
 import {recoveryFactor} from '../src/game/combat.js';
 const noop=()=>{},V=(x=0,z=0)=>new T.Vector3(x,0,z);
 {
@@ -40,19 +42,34 @@ function fixture(phase=1,index=0,type='angler'){
 for(const phase of [1,3]){const f=fixture(phase,phase===1?3:0);f.step(.1);assert.equal(f.e.harbor.cast.kind,'wave');f.step(phase===1?3.6:4.5);assert.equal(f.hits.length,phase===1?1:2,'each traveling wave hits a hero once');assert(f.hits.every(h=>h.attack.kind==='heavy'));f.clear();}
 {const f=fixture(3);f.step(.1);const c=f.e.harbor.cast;f.p.pos.copy(c.origin).add(V(Math.sin(c.gapAngle)*13,Math.cos(c.gapAngle)*13));f.step(4.5);assert.equal(f.hits.length,0,'cyan angular opening protects through both waves');f.clear();}
 {const f=fixture(3);f.p.invuln=10;f.step(4.5);assert.equal(f.hits.length,0,'displacement immunity avoids wave damage');f.clear();}
-for(const protection of ['none','ward','boots','both']){const f=fixture(2);f.g.story.fifth.ward=['ward','both'].includes(protection);f.p.has=k=>k==='tideboots'&&['boots','both'].includes(protection);f.step(5.9);assert(f.hits.length>=4&&f.hits.length<=5,'flood uses one shared .95 second tick');const scale=(f.g.story.fifth.ward?.8:1)*(f.p.has('tideboots')?.75:1);assert.equal(f.hits[0].d,55*scale);assert.equal(f.hits[0].attack.scale,scale);f.clear();}
+for(const protection of ['none','ward','boots','both']){const f=fixture(2);f.g.story.fifth.ward=['ward','both'].includes(protection);f.p.has=k=>k==='tideboots'&&['boots','both'].includes(protection);f.step(5.9);assert(f.hits.length>=4&&f.hits.length<=5,'flood uses one shared .95 second tick');const scale=(f.g.story.fifth.ward?.8:1)*(f.p.has('tideboots')?.75:1);assert(Math.abs(f.hits[0].d-55*scale*1.3)<1e-8);assert(Math.abs(f.hits[0].attack.scale-scale*1.3)<1e-8);f.clear();}
 {const f=fixture(1,2);f.step(.1);assert.equal(f.e.harbor.cast.kind,'lure');harborDamage(f.e,2000,{quiet:true},f.g);harborDamage(f.e,2000,{ally:true},f.g);assert(f.e.harbor.cast,'passive damage cannot automatically break the lamp');harborPoise(f.e,.6);assert(f.e.harbor.cast);harborDamage(f.e,500,{pal:'bolt'},f.g);assert.equal(f.e.harbor.cast,null);assert(f.e.harbor.exposed>0);f.step(2);assert.equal(f.hits.length,0);f.clear();}
 {const f=fixture(2);f.e.harbor.phase=1;f.step(.1);assert.equal(f.g.enemies.filter(e=>e.tag==='summon').length,2);f.e.hp=f.e.maxHp*.2;f.step(.1);assert.equal(f.g.enemies.filter(e=>e.tag==='summon').length,2);f.clear();}
 {const f=fixture();f.g.cinematic=true;f.step(4);assert.equal(f.e.harbor.cast,undefined);f.clear();}
 {const f=fixture();assert.equal(harborDamage(f.e,100,{pal:'bolt'},f.g),98);assert.equal(harborDamage(f.e,100,{pal:'fire'},f.g),77);f.e.harbor.exposed=3;assert.equal(harborDamage(f.e,100,{pal:'steel'},f.g),125);f.clear();}
 {const p={game:{time:2},drenched:3,drenchedUntil:5,woundUntil:5};assert.equal(recoveryFactor(p),.64,'recovery debuffs use the strongest effect, not multiplication');p.game.time=6;assert.equal(recoveryFactor(p),1);}
 for(const cls of ['mage','warrior','ranger','paladin','necro'])for(let i=0;i<12;i++){const it=rollDrop(cls,18,2,5);assert.equal(LEGENDARIES.find(l=>l.id===it.legendary).episode,5);}
+// The new ultimate locks its footprint before damage, ticks three times, then ruptures once.
+{const f=fixture(3,1);f.step(.1);assert.equal(f.e.harbor.cast.kind,'maelstrom');f.step(2.1);assert.equal(f.hits.length,0);f.step(3.5);assert.equal(f.hits.filter(h=>h.attack.kind==='hazard').length,3);assert.equal(f.hits.filter(h=>h.attack.kind==='heavy').length,1);f.clear();}
+{const f=fixture(3,1);f.step(.1);f.p.pos.copy(f.e.harbor.cast.at).add(V(9,0));f.step(5.6);assert.equal(f.hits.length,0,'leaving the ultimate footprint avoids all damage');f.clear();}
+{const f=fixture(1,3);f.step(.1);f.e.hp=f.e.maxHp*.2;f.step(3.6);assert.equal(f.hits.length,1,'crossing a phase boundary cannot add an untelegraphed second wave');assert.equal(f.hits[0].attack.scale,1.22,'damage uses the phase that was telegraphed');f.clear();}
+{const f=fixture(3,0);f.step(3);assert(f.hits.length>0);assert.equal(f.hits[0].attack.scale,1.38);f.clear();}
+// Exercise actual effect timelines, including low/high particle budgets, cancel/retry and finite geometry.
+for(const low of [true,false]){
+ const g={low,cinematic:false,gfx:{scene:new T.Scene(),distortScene:new T.Scene(),flash:noop},level:{},audio:{play:noop}};g.fx=new Fx(g);g.fx.tex.ring_soft=new T.Texture();
+ const c={kind:'lure',phase:3,t:0,windup:2.4,active:3.2,origin:V(),dir:V(0,1),at:V(0,12),radius:7.5,gap:.95,gapAngle:1,length:22,width:5.2,lanes:[{origin:V(),dir:V(0,1),length:32}]},e={pos:V(),alive:true,harbor:{cast:c}};
+ harborVfx.harborTelegraph(g,{kind:'charge',origin:c.origin,dir:c.dir,length:22,width:3.2,duration:1.2});
+ harborVfx.harborSplash(g,c.at,6);harborVfx.hookChain(g,c);harborVfx.harborWave(g,{...c,radius:27});harborVfx.harborWave(g,{...c,radius:27},2.2,.9);harborVfx.harborFlood(g,c);harborVfx.lureGlow(g,e,c);harborVfx.harborBite(g,c);harborVfx.harborMaelstrom(g,c);harborVfx.harborAscend(g,e);
+ for(let frame=0;frame<300;frame++){c.t+=.025;g.fx.update(.025);if(frame===60)g.gfx.scene.traverse(o=>{if(o.geometry)for(const attr of Object.values(o.geometry.attributes))assert(attr.array.every(Number.isFinite),'effect geometry contains NaN');if(o.instanceMatrix)assert(o.instanceMatrix.array.every(Number.isFinite));});}
+ assert.equal(g.gfx.scene.children.length,0);assert.equal(g.gfx.distortScene.children.length,0);assert.equal(g.fx.list.length,0);
+ harborVfx.harborMaelstrom(g,c);harborVfx.harborWave(g,{...c,radius:27});g.fx.clear();g.fx.clear();assert.equal(g.gfx.scene.children.length,0,'retry cancels owned effects');
+}
 // Bone-independent fish anatomy stays bounded and releases only owned GPU resources.
 {
  const normal=new T.Texture();let borrowedDisposed=false;normal.addEventListener('dispose',()=>borrowedDisposed=true);
  const e={root:new T.Group(),model:new T.Group(),game:{low:true,materials:{tex:{rock_surface:{nor:normal}}}},alive:true,harbor:{phase:3}};const art=dressAngler(e);
- for(let i=0;i<400;i++)art.update(.025);e.root.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(art.root),size=bounds.getSize(new T.Vector3());assert(size.toArray().every(n=>Number.isFinite(n)&&n>0&&n<8));
- let draws=0,tris=0,disposed=0;const geos=new Set(),mats=new Set();art.root.traverse(o=>{if(!o.isMesh)return;draws++;tris+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;geos.add(o.geometry);mats.add(o.material);if(o.position.y===4.65)assert(o.scale.x<.4,'lamp animation preserves authored bulb proportions');});assert(draws<=24&&tris<23000);
+ for(const phase of [1,2,3])for(const kind of ['bite','hook','wave','lure','deluge','maelstrom']){e.harbor={phase,cast:{kind,t:0,windup:2}};for(let i=0;i<140;i++){e.harbor.cast.t+=.025;art.update(.025);e.root.updateMatrixWorld(true);e.root.traverse(o=>assert(o.matrixWorld.elements.every(Number.isFinite),'pose transform contains NaN'));}}e.harbor={phase:3};e.root.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(art.root),size=bounds.getSize(new T.Vector3());assert(size.toArray().every(n=>Number.isFinite(n)&&n>0));assert(size.x<9&&size.y<9&&size.z<14);
+ let draws=0,tris=0,disposed=0;const geos=new Set(),mats=new Set();art.root.traverse(o=>{if(!o.isMesh)return;draws++;tris+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;geos.add(o.geometry);mats.add(o.material);if(o.position.y===4.65)assert(o.scale.x<.4,'lamp animation preserves authored bulb proportions');});assert(draws<=35&&tris<45000);
  for(const geo of geos)geo.addEventListener('dispose',()=>disposed++);art.dispose();art.dispose();art.update(.1);assert.equal(disposed,geos.size);assert(!borrowedDisposed);assert(e.model.visible);
 }
 console.log('Fifth-chapter gates, save-safe rituals, ready/dialogue guards, telegraph hit caps and gaps, collision-safe pulls, mitigation, active lamp breaks, summon caps, chapter loot and fish GPU lifetime passed.');

@@ -53,10 +53,10 @@ for(const mode of ['chapter','boss'])for(const c of CHAPTERS)for(const cls of Ob
 }
 // Recorded loops request only the active mood, and episode-two effects are not fetched by other chapters.
 {
- const a=new GameAudio(),calls=[];a.ctx={};a._applyLoops=noop;a.setMood=m=>{a.mood=m;};a.manifest={sfx:{hit:{files:['hit.mp3']},e_wolf:{files:['episode2/wolf.mp3']},h_surge:{files:['episode5/surge.wav']}},amb:{amb_wind:{file:'wind.mp3'},amb_swamp:{file:'episode2/swamp.mp3'},amb_cave:{file:'cave.mp3'},amb_sea:{file:'episode5/sea.wav'}},music:{mus_crypt:{file:'crypt.mp3'}}};a.loadOverrides=async()=>{a.loops??={};a.pending??=new Map();return a.manifest;};a._file=async f=>{calls.push(f);return {};};
+ const a=new GameAudio(),calls=[];a.ctx={};a._applyLoops=noop;a.setMood=m=>{a.mood=m;};a.manifest={sfx:{hit:{files:['hit.mp3']},e_wolf:{files:['episode2/wolf.mp3']},h_surge:{files:['episode5/surge.wav']},h_doom:{files:['episode5/doom_bell.wav']},h_impact:{files:['episode5/impact.wav']}},amb:{amb_wind:{file:'wind.mp3'},amb_swamp:{file:'episode2/swamp.mp3'},amb_cave:{file:'cave.mp3'},amb_sea:{file:'episode5/sea.wav'}},music:{mus_crypt:{file:'crypt.mp3'}}};a.loadOverrides=async()=>{a.loops??={};a.pending??=new Map();return a.manifest;};a._file=async f=>{calls.push(f);return {};};
  await a.prepare('salt',4);assert(!calls.some(f=>f.startsWith('episode2/')));assert(!calls.includes('cave.mp3'));assert(!calls.some(f=>f.startsWith('episode5/')));
- await a.prepare('wreck',5);assert(calls.includes('episode5/surge.wav'));assert(a.loops.amb_sea);assert(a.overrides.h_surge);
- await a.prepare('salt',4);assert(!a.overrides.h_surge);assert(!a.loops.amb_sea);
+ await a.prepare('wreck',5);assert(calls.includes('episode5/surge.wav'));assert(a.loops.amb_sea);assert(a.overrides.h_surge);assert(a.overrides.h_doom);assert(a.overrides.h_impact);
+ await a.prepare('salt',4);assert(!a.overrides.h_surge);assert(!a.overrides.h_doom);assert(!a.overrides.h_impact);assert(!a.loops.amb_sea);
  await a.prepare('swamp',2);assert(calls.includes('episode2/wolf.mp3'));assert(a.loops.amb_swamp);assert(!a.loops.amb_wind);
  await a.prepare('salt',4);assert(!a.overrides.e_wolf);assert(!a.loops.amb_swamp);
 }

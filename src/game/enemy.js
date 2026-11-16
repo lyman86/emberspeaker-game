@@ -22,7 +22,7 @@ export const ENEMY_TYPES = {
   tidewitch:{model:'tidewitch',name:'溺歌潮巫',hp:1080,dmg:[44,60],speed:4.7,range:23,keep:15,ranged:true,proj:'ice',cd:2.7,xp:340,atkSpeed:1.4,gold:[31,45],episode:5},
   tidechain:{model:'mage',name:'沉船钟链',hp:1800,dmg:[0,0],speed:0,range:0,cd:99,xp:100,atkSpeed:1,radius:.9,gold:[15,25],episode:5},
   hookcaptain:{model:'hookcaptain',name:'钩手船长 · 鲁克',hp:12500,dmg:[70,95],speed:4.7,range:20,cd:2,xp:1300,atkSpeed:1.4,scale:1.2,radius:1,boss:true,tough:true,gold:[300,420],episode:5},
-  angler:{model:'angler',name:'深渊铃鱼 · 奥尔古',hp:62000,dmg:[110,145],speed:2.4,range:26,cd:2.3,xp:2800,atkSpeed:1.2,scale:1,radius:2.3,boss:true,tough:true,gold:[800,1050],episode:5},
+  angler:{model:'angler',name:'深渊铃鱼 · 奥尔古',hp:72000,dmg:[135,180],speed:2.8,range:26,cd:2.3,xp:2800,atkSpeed:1.2,scale:1,radius:2.8,boss:true,tough:true,gold:[800,1050],episode:5},
   saltdead:{model:'warrior',name:'盐壳行尸',hp:920,dmg:[38,53],speed:4.1,range:2.6,cd:1.7,xp:230,atkSpeed:1.4,gold:[22,35],episode:4},
   sandweaver:{model:'mage',name:'沙匠',hp:820,dmg:[42,57],speed:4.5,range:23,keep:15,ranged:true,proj:'ice',cd:2.8,xp:270,atkSpeed:1.5,gold:[25,39],episode:4},
   saltfiend:{model:'elite',name:'蓝皮盐魔',hp:1750,dmg:[51,70],speed:6.2,range:3.3,cd:1.7,xp:330,atkSpeed:1.5,scale:1.12,gold:[30,48],episode:4},

@@ -5,7 +5,7 @@
  * Ambience loops (amb_*) and music tracks (mus_*) from the manifest replace the
  * synthesized wind and generative score.
  */
-const HARBOR_SOUNDS=['h_surge','h_chain','h_lure','h_plank','h_roar'];
+const HARBOR_SOUNDS=['h_surge','h_chain','h_lure','h_plank','h_roar','h_impact','h_doom'];
 const NOTE = (n) => 440 * Math.pow(2, (n - 69) / 12);
 
 export class GameAudio {

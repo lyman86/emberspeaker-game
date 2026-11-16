@@ -28,6 +28,7 @@ function run(type,phase,dodging,gear,potions,highregen){
     if(c.kind==='hook')target=p.pos.clone().add(V(c.dir.z*5,-c.dir.x*5));
     if(c.kind==='bite')target=c.origin.clone().addScaledVector(c.dir,10.5);
     if(c.kind==='lure')target=p.pos.clone().add(V(6,0));
+    if(c.kind==='maelstrom')target=c.at.clone().add(V(10,0));
     if(c.kind==='deluge')target=p.pos.clone().add(V(c.dir.z*5,-c.dir.x*5));
     if(c.kind==='wave')target=c.origin.clone().add(V(Math.sin(c.gapAngle)*13,Math.cos(c.gapAngle)*13));
    }

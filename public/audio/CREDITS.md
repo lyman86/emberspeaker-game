@@ -82,3 +82,5 @@
 ## Episode 5 · original maritime sounds (2026-11-16)
 
 `episode5/sea.wav`, `surge.wav`, `chain.wav`, `lure.wav`, and `plank.wav` are original deterministic DSP audio generated for this project by `tools/make-harbor-audio.py` (filtered noise, modal tones and envelopes; no sampled third-party recordings). They may be distributed with this game. `h_roar` reuses the already credited `roar_0.mp3` recording above; it does not introduce a new download. These files are loaded only with episode 5 moods/effects.
+
+- 第五集重制：`episode5/impact.wav`、`episode5/doom_bell.wav` 同为本项目 stdlib DSP 原创，分别用于重击与葬海钟域蓄力；无第三方采样。

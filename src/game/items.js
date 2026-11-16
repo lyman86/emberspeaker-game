@@ -74,7 +74,7 @@ export const AFFIXES = {
  * They only drop in the field (elites, bosses, rare chance from normal monsters at higher levels).
  */
 export const LEGENDARIES = [
-  {id:'tideboots',name:'踏潮者的旧靴',base:'boots',flag:'tideboots',episode:5,power:'潮浪与甲板洪流伤害降低 25%；保留其他伤害规则。'},
+  {id:'tideboots',name:'踏潮者的旧靴',base:'boots',flag:'tideboots',episode:5,power:'潮浪、裂流与葬海钟域伤害降低 25%。'},
   {id:'hookgrasp',name:'断锚者之握',base:'gloves',flag:'hookgrasp',episode:5,power:'对处于破灯或收潮破绽中的港口敌人额外造成 15% 伤害。'},
   {id:'tideeye',name:'沉灯之眼',base:'ring',flag:'tideeye',episode:5,power:'打断引潮或钩链后回复 20 点职业资源（冷却 8 秒）。'},
   {id:'saltmantle',name:'避风者的盐纱',base:'robe',flag:'saltmantle',episode:4,power:'盐沙风暴造成的伤害降低 35%，可与避风护符叠加。'},

@@ -461,6 +461,22 @@
       "gain": 0.85,
       "wet": 0.4,
       "pitch": 0.025
+    },
+    "h_impact": {
+      "files": [
+        "episode5/impact.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.3,
+      "pitch": 0.025
+    },
+    "h_doom": {
+      "files": [
+        "episode5/doom_bell.wav"
+      ],
+      "gain": 0.7,
+      "wet": 0.4,
+      "pitch": 0.012
     }
   },
   "amb": {
