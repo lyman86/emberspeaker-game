@@ -1,3 +1,4 @@
+import {bossAttack} from './combat.js';
 import * as T from 'three';
 import {inLane,inSector} from './stag.js';
 import {stagTelegraph} from './stag-vfx.js';
@@ -22,16 +23,16 @@ export function saltPoise(e,value){
  s.poise=Math.min(1,(s.poise??0)+value);if(s.poise<1)return;
  for(const w of c.warnings)w.stop();s.cast=null;s.rest=2.5;s.exposed=3;s.poise=0;e.intent='盐冠失衡 · 反击伤害 +30%';e.game.audio.play('shatter',e.pos);e.game.ui.toast('封尸被打断 · 抓住反击窗口');
 }
-function hurt(e,a,damage,storm=false){
+function hurt(e,a,damage,storm=false,kind='heavy'){
  const g=e.game;if(g.cinematic||!a.alive||a.invuln>0||a.buffs?.divineWings)return;
  const shelter=storm&&g.story?.fourth?.shelter? .75:1;
  const mantle=storm&&a.has?.('saltmantle')? .65:1;
- a.hurt(damage*shelter*mantle*(a===g.player?1:.6),e.pos);
+ a.hurt(damage*shelter*mantle*(a===g.player?1:.6),e.pos,{...bossAttack(e,storm?'hazard':kind),scale:shelter*mantle,erosion:storm&&e.type==='saltqueen'});
 }
 function spikes(g,p,r=3){saltEruption(g,p,r);}
 function shard(e,dir,damage){
  const g=e.game,from=e.pos.clone().setY(1.9);
- shoot(g,{team:'enemy',mesh:saltShard(g),ribbonWidth:.16,ribbonColor:[.8,1.5,1.6],pos:from,vel:dir.clone().multiplyScalar(18),pal:'ice',size:.27,r:.45,life:3,light:25,onHit:(a,p)=>{g.fx.spark(p,'ice',8);if(a)hurt(e,a,damage);}});
+ shoot(g,{team:'enemy',mesh:saltShard(g),ribbonWidth:.16,ribbonColor:[.8,1.5,1.6],pos:from,vel:dir.clone().multiplyScalar(18),pal:'ice',size:.27,r:.45,life:3,light:25,onHit:(a,p)=>{g.fx.spark(p,'ice',8);if(a)hurt(e,a,damage,false,'projectile');}});
 }
 function makeSeals(e,n){
  const g=e.game,alive=g.enemies.filter(o=>o.alive&&o.type==='saltseal'&&o.pos.distanceTo(e.pos)<38).length;
@@ -48,11 +49,14 @@ function cast(e,kind){
   for(const point of c.points)c.warnings.push(stagTelegraph(g,{kind:'disc',origin:point,radius:3,duration:c.windup}));
  } else if(kind==='storm'){
   const spots=e.type==='saltqueen'?[[13,11],[29,11],[21,16]]:[[15,28],[27,28]];
-  const choices=spots.map(([x,z])=>g.level.center(x,z)).filter(p=>!g.level.blocked(p.x,p.z,5.5));
-  // Safety always starts within a reachable dodge, even if authored scenery rules out a fixed shrine.
-  const legal=choices.filter(p=>p.distanceTo(g.player.pos)<14),q=legal[s.index%Math.max(1,legal.length)]??g.player.pos;
-  c.safe=q.clone();const free=g.level.nearestFree(c.safe.x,c.safe.z,.8);if(free){c.safe.x=free.x;c.safe.z=free.z;}
-  saltStorm(g,c,c.windup+c.active);g.ui.toast('盐沙风暴 · 进入青色圆环避风');
+  const at=g.player.pos,choices=spots.map(([x,z])=>g.level.center(x,z));
+  for(let i=0;i<8;i++){const a=i*Math.PI/4;const q=g.level.nearestFree(at.x+Math.sin(a)*8.5,at.z+Math.cos(a)*8.5,.8);if(q)choices.push(V(q.x,q.z));}
+  const legal=choices.filter(p=>{const distance=p.distanceTo(at);if(distance<7||distance>11||g.level.blocked(p.x,p.z,.8)||s.lastSafe?.distanceTo(p)<5)return false;
+   const path=g.level.findPath?.(at.x,at.z,p.x,p.z);if(!path)return true;if(!path.length)return false;let from=at,total=0;for(const step of path){total+=Math.hypot(step.x-from.x,step.z-from.z);from=step;}return total<=12;
+  });
+  // Pick a reachable side shelter, not a safe circle centred on a stationary player.
+  c.safe=(legal[s.index%Math.max(1,legal.length)]??at).clone();s.lastSafe=c.safe.clone();
+  saltStorm(g,c,c.windup+c.active);g.ui.toast('盐沙风暴 · 青环避风 · 盐蚀加重风暴伤害并抑制治疗');
  } else if(kind==='prism'){
   c.lanes=Array.from({length:6},(_,i)=>({origin,dir:dir.clone().applyAxisAngle(UP,i*Math.PI/3),length:40}));
   for(const lane of c.lanes)c.warnings.push(stagTelegraph(g,{kind:'charge',...lane,width:2.8,duration:c.windup}));
@@ -89,7 +93,7 @@ function chief(e,dt){
  }
  if(s.rally){s.rally=false;makeSeals(e,s.phase===3?3:2);const alive=g.enemies.filter(o=>o.alive&&o.tag==='summon'&&o.type==='saltdead').length;for(let i=alive;i<2;i++){const p=g.level.nearestFree(e.home.x+(i?7:-7),e.home.z+9,.8);if(p)g.spawnEnemy('saltdead',p.x,p.z,{tag:'summon',level:e.level});}s.rest=1.6;}
  s.rest-=dt;if(s.rest>0){if(g.player.pos.distanceTo(e.pos)>11.5){e._walk(g.player.pos.x,g.player.pos.z,dt,e.T.speed);e.locomote('Running_A',e.T.speed);}else{e.face(g.player.pos.x,g.player.pos.z);e.play('Idle');}return true;}
- const rotation=e.type==='saltpriest'?['fault','fan','crown','fault']:s.phase===1?['fan','fault','storm']:s.phase===2?['crown','fault','storm','fan']:['prism','storm','fault','fan'];
+ const rotation=e.type==='saltpriest'?['fault','fan','crown','fault']:s.phase===1?['fan','fault','storm','fault']:s.phase===2?['crown','fault','storm','fan','fault']:['prism','storm','fault','fan','fault'];
  cast(e,rotation[s.index++%rotation.length]);return true;
 }
 export function saltUpdate(e,dt,dist){

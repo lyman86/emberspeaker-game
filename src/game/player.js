@@ -1,3 +1,4 @@
+import {incomingDamage,damageGrowth,POTION_COOLDOWN,recoveryFactor} from './combat.js';
 import * as THREE from 'three';
 import { Actor } from './actor.js';
 import { CLASS_SKILLS } from './skills.js';
@@ -85,7 +86,7 @@ export class Player extends Actor {
     const main = st[C.main];
     const wAvg = wdmg ? (wdmg[0] + wdmg[1]) / 2 : 5;
     this.weaponFactor = wAvg / 10; // starter weapons average ~10
-    this.dmgMul = ((1 + main / 100) * this.weaponFactor * (1 + st.dmgPct / 100) * (1 + 0.04 * L)) / 1.3; // ≈1.0 for a fresh character
+    this.dmgMul = damageGrowth(((1 + main / 100) * this.weaponFactor * (1 + st.dmgPct / 100) * (1 + 0.04 * L)) / 1.3); // ≈1.0 for a fresh character
     const oldMax = this.maxHp || 1;
     this.maxHp = Math.round(C.hp + st.vit * 6 + st.hp + L * 8);
     this.maxMp = Math.round(C.res.max + st.res);
@@ -105,14 +106,13 @@ export class Player extends Actor {
     for (const bf of Object.values(this.buffs)) if (bf.dmg) mul *= 1 + bf.dmg;
     if (school === 'fire' && this.has('emberheart')) mul *= 1.1;
     const v = Math.round((a + Math.random() * (b - a)) * mul * (crit ? 1 + st.critDmg / 100 : 1));
-    if (crit && this.has('bloodring')) this.heal(this.maxHp * 0.03, true);
     return { v, crit };
   }
 
   gainRes(n) { this.mp = Math.max(0, Math.min(this.maxMp, this.mp + n)); }
 
   heal(n, quiet = false) {
-    if(this.plagueUntil>this.game.time)n*=1-.12*(this.plagueStacks??0);
+    n*=recoveryFactor(this);
     if (!this.alive) return;
     const v = Math.round(Math.min(n, this.maxHp - this.hp));
     if (v <= 0) return;
@@ -122,7 +122,12 @@ export class Player extends Actor {
 
   buff(name, dur, data) { this.buffs[name] = { t: dur, ...data }; this.recalc(); }
 
-  onHit(n) { if (this.stats.lifeHit) this.heal(this.stats.lifeHit * n, true); }
+  onHit(crit=false) {
+    const now=this.game.time;let healing=0;
+    if(this.stats.lifeHit&&now>=(this._lifeHitAt??0)){this._lifeHitAt=now+.65;healing+=Math.min(this.stats.lifeHit,this.maxHp*.015);}
+    if(crit&&this.has('bloodring')&&now>=(this._bloodAt??0)){this._bloodAt=now+1.2;healing+=this.maxHp*.02;}
+    if(healing)this.heal(healing,true);
+  }
 
   onKill(e) { if(e?.type==='saltseal'&&this.has('desertgrip')){this.heal(this.maxHp*.08);this.gainRes(15);} if(e?.T.episode===3&&this.has('ironmarch'))this.buff('ironmarch',4,{}); if (this.has('gravewalker')) this.buff('gravewalker', 3, {}); }
 
@@ -274,9 +279,10 @@ export class Player extends Actor {
     if (!this.alive || this.potions[kind] <= 0) { this.game.audio.play('denied'); return; }
     const full = kind === 'hp' ? this.hp >= this.maxHp : this.mp >= this.maxMp;
     if (full) return;
-    this.potions[kind]--;
+    if((this.potionCd??0)>0){this.game.ui.toast(`药水准备中 · ${Math.ceil(this.potionCd)} 秒`);return;}
+    this.potionCd=POTION_COOLDOWN;this.potions[kind]--;
     this.game.audio.play('potion');
-    if (kind === 'hp') { this.heal(this.maxHp * 0.5); this.game.fx.pillar(this.pos, 'blood', 30, 4); }
+    if (kind === 'hp') { this.heal(this.maxHp * 0.4); this.game.fx.pillar(this.pos, 'blood', 30, 4); }
     else { const v = Math.round(this.maxMp * 0.6); this.gainRes(v); this.game.ui.number(this.pos, '+' + v, 'info'); this.game.fx.pillar(this.pos, 'ice', 30, 4); }
     this.game.save();
   }
@@ -305,11 +311,11 @@ export class Player extends Actor {
     return Math.min(1, (this.xp - a) / (b - a));
   }
 
-  hurt(dmg, from) {
+  hurt(dmg, from, attack) {
     if (!this.alive || this.invuln > 0 || this.buffs.divineWings || this.game.cinematic) return;
     const g = this.game;
     if (this.has('silentbell') && (this._bellCd ?? 0) <= 0) { this._bellCd = 8; g.ui.number(this.pos, '抵消', 'info'); g.audio.play('bell', this.pos, 0.2); return; }
-    let v = dmg * (1 - this.dr)*(this.buffs.ironmarch?.9:1);
+    let v = incomingDamage(dmg,this,attack)*(this.buffs.ironmarch?.9:1);
     if (this.shield > 0) {
       if (this.has('aegis')) v *= 0.8;
       const ab = Math.min(this.shield, v); this.shield -= ab; v -= ab; this.shieldHit(from);
@@ -321,6 +327,8 @@ export class Player extends Actor {
       this._thornCd=3;g.fx.explode(this.pos,5,'poison',0.5);for(const e of g.enemiesNear(this.pos,5))g.hurtEnemy(e,this.roll(20,28,'poison'),{pal:'poison',quiet:true});
     }
     this.hp -= v;
+    if(attack?.kind==='heavy')this.woundUntil=g.time+5;
+    if(attack?.erosion){this.saltExposure=Math.min(3,(this.saltExposureUntil>g.time?this.saltExposure??0:0)+1);this.saltExposureUntil=g.time+4;}
     this.flash(0.8);
     if (this.cls === 'warrior') this.gainRes(4);
     g.ui.number(this.pos, '-' + v, 'hurt');
@@ -338,6 +346,7 @@ export class Player extends Actor {
 
   revive(at) {
     this.plagueStacks=0;this.plagueUntil=0;
+    this.potionCd=0;this._lifeHitAt=0;this._bloodAt=0;this.woundUntil=0;this.saltExposure=0;this.saltExposureUntil=0;
     this.alive = true; this.hp = this.maxHp; this.mp = this.maxMp * this.C.res.start; this.lock = 0; this.pending = null; this.path = [];
     this.pos.set(at.x, 0, at.z);
     this.play('Idle', { restart: true });
@@ -448,6 +457,7 @@ export class Player extends Actor {
     this._updateAegis(dt);
     for (const k in this.cds) if (this.cds[k] > 0) this.cds[k] -= dt;
     this.invuln = Math.max(0, this.invuln - dt);
+    this.potionCd=Math.max(0,(this.potionCd??0)-dt);
     this._bellCd = (this._bellCd ?? 0) - dt;
     if(this.plagueStacks&&this.plagueUntil<=g.time)this.plagueStacks=0;
     this._thornCd=(this._thornCd??0)-dt; this._hookCd=(this._hookCd??0)-dt;
@@ -456,8 +466,8 @@ export class Player extends Actor {
     if (changed) this.recalc();
 
     if (this.alive) {
-      this.hp = Math.min(this.maxHp, this.hp + st.regen * dt * (this.plagueUntil>g.time?1-.12*(this.plagueStacks??0):1));
-      const inCombat = g.enemies.some((e) => e.alive && e.state !== 'dormant' && !e.asleep && e.pos.distanceTo(this.pos) < 16);
+      const inCombat = g.enemies.some((e) => e.alive && e.state !== 'dormant' && !e.asleep && e.pos.distanceTo(this.pos) < (e.T?.boss?45:18));
+      this.hp = Math.min(this.maxHp, this.hp + st.regen * dt * (inCombat?.35:1) * recoveryFactor(this));
       const regen = this.C.res.regen < 0 ? (inCombat ? 0 : this.C.res.regen) : this.C.res.regen * (1 + this.level * 0.05);
       this.gainRes((regen + st.resRegen) * dt);
       if (this.pending) {

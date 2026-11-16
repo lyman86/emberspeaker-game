@@ -1,3 +1,4 @@
+import {bossAttack} from './combat.js';
 import * as THREE from 'three';
 import {stagTelegraph,stagSlash,stagRoots,stagShockwave,stagChargeTrail} from './stag-vfx.js';
 const V=(x=0,z=0)=>new THREE.Vector3(x,0,z);
@@ -7,7 +8,7 @@ export function inLane(origin,dir,target,length,width){const d=target.clone().su
 const targets=e=>[e.game.player,...(e.game.allies??[])].filter(a=>a.alive);
 function hit(e,a,damage,plague=0){
   const g=e.game;if(g.cinematic||!a.alive||a.invuln>0||a.buffs?.divineWings)return;
-  const hp=a.hp;a.hurt(damage*(a===g.player?1:.65),e.pos);
+  const hp=a.hp;a.hurt(damage*(a===g.player?1:.65),e.pos,bossAttack(e,damage<=25?'hazard':'heavy'));
   if(plague&&a===g.player&&a.hp<hp){a.plagueStacks=Math.min(3,(a.plagueStacks??0)+plague);a.plagueUntil=g.time+10;}
 }
 export function stagPoise(e,value){

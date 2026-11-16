@@ -1,3 +1,4 @@
+import {bossAttack} from './combat.js';
 import * as THREE from 'three';
 import { saltUpdate,saltPoise } from './salt.js';
 import { dressSaltEnemy } from './salt-art.js';
@@ -19,7 +20,7 @@ export const ENEMY_TYPES = {
   tombguard:{model:'warrior',name:'盐墓守卫',hp:1400,dmg:[47,64],speed:4.8,range:3.2,cd:1.5,xp:280,atkSpeed:1.5,scale:1.1,gold:[26,42],episode:4},
   saltseal:{model:'mage',name:'共鸣盐晶',hp:950,dmg:[0,0],speed:0,range:0,cd:99,xp:130,atkSpeed:1,radius:.9,gold:[15,20],episode:4},
   saltpriest:{model:'boss',name:'封尸祭司 · 纳赫',hp:11000,dmg:[65,85],speed:3.8,range:20,cd:2.5,xp:1200,atkSpeed:1.3,scale:1.25,radius:.9,boss:true,tough:true,gold:[260,340],episode:4},
-  saltqueen:{model:'saltqueen',name:'盐之女王 · 瑟芮娅',hp:36000,dmg:[78,105],speed:4.3,range:22,cd:2.5,xp:2500,atkSpeed:1.4,scale:1.6,radius:1,boss:true,tough:true,gold:[650,850],episode:4},
+  saltqueen:{model:'saltqueen',name:'盐之女王 · 瑟芮娅',hp:45000,dmg:[78,105],speed:4.3,range:22,cd:2.5,xp:2500,atkSpeed:1.4,scale:1.6,radius:1,boss:true,tough:true,gold:[650,850],episode:4},
 
   rebel:{model:'rebel',name:'叛军盾卒',hp:620,dmg:[32,43],speed:4.7,range:2.7,cd:1.6,xp:115,atkSpeed:1.5,gold:[15,24],episode:3},
   raider:{model:'raider',name:'铁冠掠夺者',hp:490,dmg:[38,50],speed:6.2,range:2.7,cd:1.4,xp:110,atkSpeed:1.6,gold:[16,25],episode:3},
@@ -30,7 +31,7 @@ export const ENEMY_TYPES = {
   warbanner:{model:'rebel',name:'铁冠军阵战旗',hp:650,dmg:[0,0],speed:0,range:0,cd:99,xp:120,atkSpeed:1,radius:.55,gold:[20,30],episode:3},
   ballista:{model:'rebel',name:'关隘重弩',hp:1300,dmg:[60,85],speed:0,range:38,cd:5,xp:220,atkSpeed:1,proj:'arrow',radius:1.6,gold:[50,75],episode:3},
   blackknight:{model:'blackknight',name:'黑铁骑士 · 维斯特',hp:7200,dmg:[55,72],speed:5,range:3.5,cd:1.8,xp:700,atkSpeed:1.5,tough:true,boss:true,scale:1.25,radius:.9,gold:[230,300],episode:3},
-  ironking:{model:'ironking',name:'叛王 · 赫拉克留斯',hp:24000,dmg:[65,85],speed:5.2,range:4,cd:1.8,xp:1800,atkSpeed:1.5,tough:true,boss:true,proj:'arrow',scale:1.45,radius:1.05,gold:[500,650],episode:3},
+  ironking:{model:'ironking',name:'叛王 · 赫拉克留斯',hp:28000,dmg:[65,85],speed:5.2,range:4,cd:1.8,xp:1800,atkSpeed:1.5,tough:true,boss:true,proj:'arrow',scale:1.45,radius:1.05,gold:[500,650],episode:3},
 
   villager:{model:'warrior',name:'疫病村民',hp:300,dmg:[17,24],speed:3.4,range:2.2,cd:1.6,xp:50,atkSpeed:1.4,gold:[8,15],episode:2},
   goblin:{model:'minion',name:'腐沼地精',hp:220,dmg:[24,32],speed:7,range:2,cd:1.1,xp:48,atkSpeed:1.8,scale:0.7,gold:[6,13],episode:2},
@@ -225,7 +226,7 @@ export class Enemy extends Actor {
       if (this.state !== 'attack') this.play(T.boss ? 'Idle_B' : 'Idle');
       this.state = 'idle';
     } else if (T.boss) {
-      this._boss(edt, dist, dx, dz);
+      this.mixer.timeScale=1;this._boss(dt, dist, dx, dz);
     } else if (this.state === 'idle') {
       if (dist < 17 && g.level.clear(this.pos.x, this.pos.z, pl.pos.x, pl.pos.z, 0.3)) { this.state = 'chase'; g.audio.play(this.voice(), this.pos); }
     } else if (this.state === 'chase') {
@@ -282,13 +283,13 @@ export class Enemy extends Actor {
       g.gfx.scene.add(mesh);
       shoot(g, { team: 'enemy', pos: from, vel: dir.multiplyScalar(24), pal: 'bone', mesh, r: 0.5,
         trail: (dt, pr) => { if (Math.random() < 0.5) g.particles.emit({ pos: pr.pos, count: 1, speed: [0, 0.3], life: [0.15, 0.3], size: [0.15, 0.3], c0: [0.5, 0.5, 0.45], c1: [0.1, 0.1, 0.1] }); },
-        onHit: (hit, pos) => { if (hit) { hit.hurt(dmg*(hasStandard(this)?1.25:1), pos); g.audio.play('e_hit', pos); } g.particles.emit({ pos, count: 6, speed: [1, 4], life: [0.2, 0.4], size: [0.12, 0.3], c0: PALETTE.bone.hot, c1: PALETTE.bone.cool, gravity: 8 }); } });
+        onHit: (hit, pos) => { if (hit) { hit.hurt(dmg*(hasStandard(this)?1.25:1), pos,bossAttack(this,'projectile')); g.audio.play('e_hit', pos); } g.particles.emit({ pos, count: 6, speed: [1, 4], life: [0.2, 0.4], size: [0.12, 0.3], c0: PALETTE.bone.hot, c1: PALETTE.bone.cool, gravity: 8 }); } });
     } else {
       const pal=T.proj==='poison'?'poison':T.proj==='ice'?'ice':'dark';
       g.audio.play(T.proj==='poison'?'e_poison':'darkbolt', this.pos);
       g.particles.emit({ pos: from, count: 8, speed: [1, 4], life: [0.2, 0.5], size: [0.3, 0.7], c0: PALETTE.dark.core, c1: PALETTE.dark.cool });
       shoot(g, { team: 'enemy', pos: from, vel: dir.multiplyScalar(15 * speedMul), pal, size: 0.3 * Math.min(1.5, this.scale), r: 0.6, light: 40, life: 3.2,
-        onHit: (hit, pos) => { g.fx.spark(pos, pal, 12); if (hit) { hit.hurt(dmg*(hasStandard(this)?1.25:1), pos); g.audio.play('e_hit', pos); } } });
+        onHit: (hit, pos) => { g.fx.spark(pos, pal, 12); if (hit) { hit.hurt(dmg*(hasStandard(this)?1.25:1), pos,bossAttack(this,'projectile')); g.audio.play('e_hit', pos); } } });
     }
   }
 
@@ -366,7 +367,7 @@ export class Enemy extends Actor {
           g.fx.spikes(p, { count: 11, radius: 2.4, color: 0xd8d2bd, emissive: 0x5a20a0, height: 3, hold: 0.5 });
           g.audio.play('e_spikes', p); g.gfx.addShake(0.3);
           g.particles.emit({ pos: { x: p.x, y: 0.3, z: p.z }, count: 24, radius: 1.5, flat: true, speed: [1, 5], up: 5, life: [0.3, 0.7], size: [0.3, 0.8], c0: PALETTE.dark.core, c1: PALETTE.dark.cool, gravity: 9 });
-          if (pl.pos.distanceTo(p) < 2.9) pl.hurt(rnd(20, 27), p);
+          if (pl.pos.distanceTo(p) < 2.9) pl.hurt(rnd(20, 27), p,bossAttack(this));
         });
       }]);
       begin('Spellcast_Raise', 1.6, 0.4 + n * 0.32, q);

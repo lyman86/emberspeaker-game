@@ -1,3 +1,4 @@
+import {bossAttack} from './combat.js';
 import * as T from 'three';
 import {inLane,inSector} from './stag.js';
 import {stagTelegraph} from './stag-vfx.js';
@@ -22,7 +23,7 @@ export function ironPoise(e,value){
  for(const w of c.warnings)w.stop();s.cast=null;s.rest=2.5;s.exposed=3.2;s.poise=0;e.intent='盾势已破 · 反击伤害 +25%';e.play('Hit_A',{once:true,restart:true});e.game.audio.play('shatter',e.pos,.7);e.game.ui.toast('破盾成功 · 趁机反击');
  if(e.game.player.has?.('siegebreaker'))e.game.player.buff('siegebreaker',5,{});
 }
-function hit(e,a,damage){if(e.game.cinematic||!a.alive||a.invuln>0||a.buffs?.divineWings)return;a.hurt(damage*(hasStandard(e)?1.25:1)*(a===e.game.player?1:.65),e.pos);}
+function hit(e,a,damage){if(e.game.cinematic||!a.alive||a.invuln>0||a.buffs?.divineWings)return;a.hurt(damage*(hasStandard(e)?1.25:1)*(a===e.game.player?1:.65),e.pos,bossAttack(e));}
 function slash(g,c){
  // Layered steel arcs and sparks share the same directional footprint as the sword sweep.
  const root=new T.Group();root.position.copy(c.origin);root.rotation.y=Math.atan2(c.dir.x,c.dir.z);const geos=[],mats=[],arcs=[];

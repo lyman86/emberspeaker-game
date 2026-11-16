@@ -163,3 +163,5 @@ await import('./salt.mjs');
 
 await import('./mage-effects.mjs');
 await import('./salt-art.mjs');
+await import('./balance.mjs');
+await import('./encounter-balance.mjs');

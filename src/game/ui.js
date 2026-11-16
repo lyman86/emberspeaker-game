@@ -1,4 +1,7 @@
+import {recoveryFactor} from './combat.js';
 import * as THREE from 'three';
+import {Minimap} from './minimap.js';
+import {TRANSITIONS} from './portals.js';
 import { CLASSES, CLASS_ORDER, RES_COLORS } from './classes.js';
 import { CLASS_SKILLS } from './skills.js';
 import { SLOTS, SLOT_NAMES, RARITY, BASES, AFFIXES, itemIcon, potionIcon, affixText, canEquip, shopStock } from './items.js';
@@ -23,6 +26,11 @@ export class UI {
       fade: $('#fade'), story: $('#story'), dmg: $('#dmg'), hurt: $('#hurt'), death: $('#death'), pause: $('#pause'), hint: $('#hint'),
       bag: $('#bagpanel'), shop: $('#shoppanel'), tip: $('#tooltip'), labels: $('#labels'), select: $('#select'), mporb: $('.orb.mp'),
     };
+    this.minimap=new Minimap(game,this.el.hud);
+    this.el.lootTray=h('section','loot-tray','<header><div><small>FIELD SPOILS</small><b>附近战利品 <span></span></b></div><button type="button" aria-expanded="false">展开全部</button></header><div class="loot-grid"></div><p>点击装备，走近拾取</p>');
+    this.el.portalCaption=h('div','portal-caption');this.el.portalCaption.hidden=true;this.el.labels.appendChild(this.el.portalCaption);
+    this.el.lootTray.hidden=true;this.el.labels.appendChild(this.el.lootTray);this.el.lootGrid=this.el.lootTray.querySelector('.loot-grid');
+    this.el.lootTray.querySelector('button').onclick=()=>{this.lootExpanded=!this.lootExpanded;this._lootAt=0;};
     this.el.bossDetails=h('div','boss-details','<span class="boss-phase"></span><span class="boss-intent"></span><div class="poise-track"><i></i></div>');this.el.target.appendChild(this.el.bossDetails);
     this.el.ailment=h('div','player-ailment');this.el.hud.appendChild(this.el.ailment);
     this.el.growth=h('section','panel hidden'); this.el.growth.id='growthpanel';
@@ -93,11 +101,11 @@ export class UI {
     });
     this._skillProgress=null;this.updateSkillProgress();
     for (const [k, key] of [['hp', '1'], ['mp', '2']]) {
-      const d = h('div', 'skill potion' + (k === 'hp' ? ' gap' : ''), `<div class="ico">${potionIcon(k)}</div><div class="key">${key}</div><div class="cnt"></div>`);
+      const d = h('div', 'skill potion' + (k === 'hp' ? ' gap' : ''), `<div class="ico">${potionIcon(k)}</div><div class="key">${key}</div><div class="cnt"></div><div class="cdn"></div>`);
       d.dataset.potion = k;
       if(this.game.touchMode){d.setAttribute('role','button');d.setAttribute('aria-label',k==='hp'?'使用生命药水':'使用资源药水');d.onclick=()=>this.game.player.usePotion(k);}
       box.appendChild(d);
-      this.skillEls[k] = { root: d, cnt: d.querySelector('.cnt') };
+      this.skillEls[k] = { root: d, cnt: d.querySelector('.cnt'),cdn:d.querySelector('.cdn') };
     }
   }
 
@@ -135,7 +143,7 @@ export class UI {
     }
     if (t.dataset.potion) {
       const k = t.dataset.potion, n = pl.potions[k];
-      return k === 'hp' ? box('生命药水', `立即回复 50% 最大生命。<br>剩余 <b>${n}</b> 瓶，可在营地向艾琳购买。`, '1') : box(pl.C.res.name + '药水', `立即回复 60% ${pl.C.res.name}。<br>剩余 <b>${n}</b> 瓶，可在营地向艾琳购买。`, '2');
+      return k === 'hp' ? box('生命药水', `立即回复 40% 最大生命。<br>剩余 <b>${n}</b> 瓶；两种药水共用 10 秒冷却。`, '1') : box(pl.C.res.name + '药水', `立即回复 60% ${pl.C.res.name}。<br>剩余 <b>${n}</b> 瓶；两种药水共用 10 秒冷却。`, '2');
     }
     if (t.id === 'xp') return box('经验', `等级 ${pl.level} · ${pl.xpText?.() ?? Math.round(pl.xpProgress() * 100) + '%'}`, '');
     if (t.classList.contains('hp')) return box('生命', `${Math.ceil(pl.hp)} / ${pl.maxHp}${pl.shield > 0 ? `<br>护盾 <b>${Math.round(pl.shield)}</b>（先于生命承受伤害）` : ''}<br>每秒回复 ${pl.stats.regen.toFixed(1)}`, '');
@@ -325,7 +333,7 @@ export class UI {
        <div><span>护甲</span><b>${Math.round(s.armor)}<small> (减伤 ${Math.round(pl.dr * 100)}%)</small></b></div>
        <div><span>伤害系数</span><b>${dps}</b></div><div><span>暴击</span><b>${s.crit.toFixed(1)}% / +${Math.round(s.critDmg)}%</b></div>
        <div><span>攻击速度</span><b>+${Math.round(s.atkSpd)}%</b></div><div><span>移动速度</span><b>+${Math.round(s.move)}%</b></div>
-       ${s.cdr ? `<div><span>冷却缩减</span><b>${Math.round(s.cdr)}%</b></div>` : ''}${s.lifeHit ? `<div><span>击中回复</span><b>${Math.round(s.lifeHit)}</b></div>` : ''}`;
+       ${s.cdr ? `<div><span>冷却缩减</span><b>${Math.round(s.cdr)}%</b></div>` : ''}${s.lifeHit ? `<div><span>击中回复</span><b>${Math.round(Math.min(s.lifeHit,pl.maxHp*.015))}<small> / 0.65秒</small></b></div>` : ''}`;
     P.querySelector('.goldline b').textContent = pl.gold;
     P.querySelector('.hint').innerHTML = this.game.touchMode?'点击物品查看详情，再选择装备、卸下或出售':this.shopMode ? '左键 / 右键：出售给商人' : '左键 装备/卸下 · 右键 丢弃 · 拖动可整理，拖到面板外即丢弃';
   }
@@ -404,7 +412,7 @@ export class UI {
         const row=h('button','ware',`<span class="ico" aria-hidden="true">${icon}</span><span class="nm">${name}</span><span class="ds">${description}</span><span class="pr">${price} 金币</span>`);
         row.type='button';row.onclick=buy;grid.appendChild(row);
       };
-      const potions = [['hp', '生命药水', 25, '回复 50% 生命'], ['mp', pl.C.res.name + '药水', 20, `回复 60% ${pl.C.res.name}`]];
+      const potions = [['hp', '生命药水', 25, '回复 40% 生命'], ['mp', pl.C.res.name + '药水', 20, `回复 60% ${pl.C.res.name}`]];
       for(const [k,n,price,desc] of potions)supply(potionIcon(k),n,desc,price,()=>this.buyPotion(k,price,n));
       supply(potionIcon('hp'),'药剂礼包',`生命药水 ×4，${pl.C.res.name}药水 ×2`,110,()=>{
         if(pl.gold<110)return this._poor();pl.gold-=110;pl.potions.hp+=4;pl.potions.mp+=2;g.audio.play('coin');this.toast('购买：药剂礼包');g.save();this.refreshShop();this.refreshBag();
@@ -543,11 +551,11 @@ export class UI {
 
   /** Floating label above an item lying on the ground. */
   groundLabel(it) {
-    const d = h('div', 'glabel r-' + it.rarity, it.name);
+    const d = h('button', 'glabel r-' + it.rarity, `<span class="loot-art">${this.icon(it)}</span><span class="loot-copy"><b>${it.name}</b><small>${SLOT_NAMES[it.slot]} · Lv.${it.ilvl}</small></span>`);d.type='button';d.setAttribute('aria-label','拾取 '+it.name);
     d.style.color = RARITY[it.rarity].color;
     d.onmouseenter = () => {if(!this.game.touchMode)this.showTip(it, this.game.player.equip[it.slot], 'ground');};
     d.onmouseleave = () => {if(!this.game.touchMode)this.hideTip();};
-    this.el.labels.appendChild(d);
+    this.el.lootGrid.appendChild(d);
     return d;
   }
 
@@ -668,14 +676,14 @@ export class UI {
         e.root.classList.toggle('nomana', pl.mp < e.s.cost);
         const un = pl.unlocked(e.s);
         if (e.root.classList.contains('locked') === un) e.root.classList.toggle('locked', !un);
-      } else { e.cnt.textContent = pl.potions[id]; e.root.classList.toggle('empty', pl.potions[id] <= 0); }
+      } else { e.cnt.textContent = pl.potions[id];e.cdn.textContent=pl.potionCd>0?Math.ceil(pl.potionCd):''; e.root.classList.toggle('empty', pl.potions[id] <= 0);e.root.classList.toggle('cooling',pl.potionCd>0); }
     }
     const boss = g.enemies.find((e) => e.T.boss && e.alive && !e.asleep)??g.enemies.find(e=>e.type==='butcher'&&e.alive&&e.pos.distanceTo(pl.pos)<24);
     let t = boss ?? this.target;
     if (!boss) { this.targetT -= dt; if (!t || !t.alive || this.targetT <= 0) t = this.target = null; }
     document.body.classList.toggle('boss-fight',!!t?.T.boss);
-    this.el.ailment.textContent=pl.plagueStacks?`疫蚀 ${pl.plagueStacks} · 治疗 −${pl.plagueStacks*12}%`:'';
-    this.el.ailment.hidden=!pl.plagueStacks;
+    const ailments=[pl.plagueStacks?`疫蚀 ${pl.plagueStacks}`:'',pl.woundUntil>g.time?`重创 ${Math.ceil(pl.woundUntil-g.time)}秒`:'',pl.saltExposureUntil>g.time?`盐蚀 ${pl.saltExposure}`:''].filter(Boolean);
+    this.el.ailment.textContent=ailments.length?`${ailments.join(' · ')} · 治疗 −${Math.round((1-recoveryFactor(pl))*100)}%`:'';this.el.ailment.hidden=!ailments.length;
     if (t) {
       this.el.bossDetails.hidden=!(t.T.boss||t.type==='butcher');
       this.el.bossDetails.querySelector('.boss-phase').textContent=['stag','ironking','saltqueen'].includes(t.type)?`第 ${t.phase??1} 阶段 · ${Math.ceil(t.hp/t.maxHp*100)}%`:t.type==='saltpriest'?'精英 · 封尸仪式':t.type==='blackknight'?'精英 · 黑铁盾势':t.type==='butcher'?'精英 · 缝合躯体':'守钟者';
@@ -696,12 +704,20 @@ export class UI {
       n.el.style.transform = `translate(${s.x + n.vx * k}px, ${s.y - 60 * (1 - (1 - k) ** 2)}px) translate(-50%,-50%) scale(${k < 0.12 ? 0.6 + k * 5 : 1.2 - k * 0.3})`;
       n.el.style.opacity = k > 0.6 ? 1 - (k - 0.6) / 0.4 : 1;
     }
-    // ground item labels
-    for (const l of g.loot) if (l.label) {
-      const s = g.gfx.project(_p.set(l.mesh.position.x, 0.9, l.mesh.position.z), _o);
-      const far = Math.hypot(l.mesh.position.x - pl.pos.x, l.mesh.position.z - pl.pos.z) > 30;
-      l.label.style.display = s.visible && !far ? '' : 'none';
-      l.label.style.transform = `translate(${s.x}px, ${s.y}px) translate(-50%, -100%)`;
+    this.minimap.update(dt);
+    const portal=[...g.level.portals?.values()??[]].filter(p=>p.root.position.distanceTo(pl.pos)<11).sort((a,b)=>a.root.position.distanceToSquared(pl.pos)-b.root.position.distanceToSquared(pl.pos))[0];
+    const caption=this.el.portalCaption;caption.hidden=!portal||g.cinematic||this.panelOpen;
+    if(portal&&!caption.hidden){const s=g.gfx.project(_p.copy(portal.root.position).setY(5.3),_o);caption.hidden=!s.visible;caption.textContent=TRANSITIONS[portal.trigger.id]+(portal.active?' · 穿门前往':' · 尚未开启');caption.style.transform=`translate(${s.x}px,${s.y}px) translate(-50%,-100%)`;}
+
+    this._lootAt=(this._lootAt??0)-dt;
+    if(this._lootAt<=0){
+      this._lootAt=.15;const items=g.loot.filter(l=>l.label&&l.pos.distanceTo(pl.pos)<22).sort((a,b)=>['legendary','rare','magic','common'].indexOf(a.item.rarity)-['legendary','rare','magic','common'].indexOf(b.item.rarity)||a.pos.distanceToSquared(pl.pos)-b.pos.distanceToSquared(pl.pos));
+      const limit=g.touchMode?3:6,shown=new Set((this.lootExpanded?items:items.slice(0,limit)).map(l=>l.label));
+      for(const l of g.loot)if(l.label)l.label.hidden=!shown.has(l.label);
+      items.filter(l=>shown.has(l.label)).forEach((l,i)=>{const at=this.el.lootGrid.children[i];if(at!==l.label)this.el.lootGrid.insertBefore(l.label,at??null);});
+      this.el.lootTray.hidden=!items.length||g.cinematic||this.panelOpen||!pl.alive;
+      this.el.lootTray.querySelector('header span').textContent=items.length;
+      const toggle=this.el.lootTray.querySelector('header button');toggle.hidden=items.length<=limit;toggle.textContent=this.lootExpanded?'收起':`查看全部 +${Math.max(0,items.length-limit)}`;toggle.setAttribute('aria-expanded',!!this.lootExpanded);
     }
   }
 }

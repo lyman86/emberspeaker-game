@@ -18,7 +18,6 @@ import { paintSkillIcons } from './game/skillart.js';
 import { CLASS_SKILLS } from './game/skills.js';
 import { UI } from './game/ui.js';
 import { TouchControls } from './game/touch.js';
-import { Guidance } from './game/guidance.js';
 import {saltDamage} from './game/salt.js';
 import {ironDamage} from './game/iron.js';
 import { bossDamage } from './game/stag.js';
@@ -83,7 +82,6 @@ class Game {
     this.audio = new GameAudio();
     this.fx = new Fx(this);
     this.ui = new UI(this);
-    this.guidance=new Guidance(this);
     this.input = new Input(this);
     if(touchMode)this.touch=new TouchControls(this);
     this.enemies = []; this.allies = []; this.projectiles = []; this.npcs = []; this.loot = []; this.chests = []; this.timers = [];
@@ -201,7 +199,6 @@ class Game {
       if(['pass','fortress','knight','ironking'].includes(params.get('qa')))button('切换第三关测试点',()=>{location.href='?qa='+({pass:'knight',knight:'ironking',ironking:'pass',fortress:'ironking'}[params.get('qa')])+(this.touchMode?'&touch=1':'');});
       button('检查第二集音频',()=>{const keys=['e_villager','e_goblin','e_wolf','e_witch','e_butcher','e_poison','e_roots'];const ok=keys.filter(k=>this.audio.overrides[k]).length;const beds=['amb_forest','amb_swamp','amb_mill'].filter(k=>this.audio.loops?.[k]).length;this.ui.toast(`音频解码：怪物 ${ok}/7 · 环境 ${beds}/3`);this.audio.play('e_witch',this.player.pos);});
       if(params.get('qa')==='collision')button('冲向柜子背面',()=>{const b=this.level.boxes.filter(b=>b.prop==='cabinet').sort((a,b)=>Math.hypot(a.x-this.player.pos.x,a.z-this.player.pos.z)-Math.hypot(b.x-this.player.pos.x,b.z-this.player.pos.z))[0];if(b){const dir=new THREE.Vector3(b.x-this.player.pos.x,0,b.z-this.player.pos.z).normalize();this.player.castSlot(5,new THREE.Vector3(b.x,0,b.z).addScaledVector(dir,3));}});
-      button('沿当前指引行走',()=>{const t=this.story.guidance();if(t)this.player.moveTo(t.x,t.z);});
       if(params.get('qa')==='boss'){
         button('走入祭坛侧边',()=>{this.player.moveTo(50,44);});
         button('验证重试',()=>{this.respawn();this.player.pos.copy(this.level.center(15,13));this.gfx.snap(this.player.pos);});
@@ -287,8 +284,6 @@ class Game {
     for (const l of this.loot) { l.mesh.removeFromParent(); l.label?.remove(); }
     this.enemies = []; this.allies = []; this.npcs = []; this.projectiles = []; this.loot = []; this.chests = []; this.timers = [];
     this.fx.clear(); for (const ps of [this.particles, this.smoke, this.flames, this.blazes, this.blasts, this.puffs, this.dusts]) ps.clear();
-    // The reusable route mesh belongs to the game, not the outgoing map.
-    this.guidance.trail.removeFromParent();this.guidance.tick=0;
     this.level?.dispose();
     this.assets.retain(needed.models);this.materials.retain([...needed.materials,...SHARED_MATERIALS]);
     this.inside.clear();
@@ -317,7 +312,9 @@ class Game {
       this.cinematic = false;
       this.ui.banner(spec.name, spec.sub);
     }
-    this.cinematic=wasCinematic;this.loadingLevel=false;this.save();
+    this.cinematic=wasCinematic;this.loadingLevel=false;
+    if(!silent){this.fx.glyph(this.player.pos,{tex:'magic1',color:[1.5,1.1,.5],r:3.5,dur:1.1,spin:.45});this.fx.pillar(this.player.pos,'holy',14,3);this.audio.play('e_blink',this.player.pos,.4);}
+    this.save();
   }
 
   spawnEnemy(type, x, z, opts = {}) {
@@ -464,7 +461,7 @@ class Game {
     this.gfx.scene.add(mesh);
     const label = this.ui.groundLabel(item);
     const l = { kind: 'item', item, mesh, label, fx, from: new THREE.Vector3(at.x, 0, at.z), target, t: 0, pos: target, name: item.name, spin };
-    label.addEventListener('mousedown', (e) => { e.stopPropagation(); if (e.button === 0 && this.player.alive && !this.cinematic) { this.player.interactTarget = l; this.player.moveTo(l.pos.x, l.pos.z); } });
+    label.addEventListener('click', (e) => { e.stopPropagation(); if (e.button === 0 && this.player.alive && !this.cinematic) { this.player.interactTarget = l; this.player.moveTo(l.pos.x, l.pos.z); } });
     this.loot.push(l);
     if (!near) {
       if (item.rarity === 'legendary') { this.audio.play('legendary', at); this.ui.toast('传奇物品掉落：' + item.name); this.gfx.flash(at, 0xff9a40, 260, 0.9, 18); }
@@ -540,7 +537,7 @@ class Game {
     if (!opts.ally) this.ui.setTarget(e);
     if (!opts.quiet) this.audio.play('hit', e.pos, 0.7);
     if (crit) this.hitStop(0.035);
-    if (!opts.ally && this.player.stats.lifeHit && !opts.quiet) this.player.heal(this.player.stats.lifeHit, true);
+    if(!opts.ally&&!opts.quiet)this.player.onHit(crit);
   }
 
   onEnemyKilled(e) {
@@ -654,7 +651,6 @@ class Game {
     for (const e of this.enemies) if (e.alive && (e.state === 'chase' || e.state === 'attack') && Math.abs(e.pos.x - pl.pos.x) + Math.abs(e.pos.z - pl.pos.z) < 24) threat += e.T.boss ? 4 : e.T.tough ? 2 : 1;
     this.audio.setIntensity(Math.min(1, threat / 4));
     this.ui.update(real);
-    this.guidance.update(real);
     // performance hint: if the high preset struggles for a while, suggest a lower one (once)
     if (!this._perfHinted && this.quality !== 'low') {
       this._fpsT = (this._fpsT ?? 0) + real; this._fpsN = (this._fpsN ?? 0) + 1;

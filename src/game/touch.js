@@ -35,7 +35,6 @@ export class TouchControls {
     game.canvas.addEventListener('pointercancel',()=>tap=null);
     window.addEventListener('blur',()=>{release();this.attack=this.secondary=false;});
     document.addEventListener('visibilitychange',()=>{if(document.hidden){release();this.attack=this.secondary=false;game.save(true);}});
-    this.minimap=document.createElement('canvas');this.minimap.id='touch-minimap';this.minimap.width=200;this.minimap.height=156;this.minimap.setAttribute('aria-label','区域地图与当前位置');game.ui.el.hud.appendChild(this.minimap);
     this.vitals=document.createElement('div');this.vitals.className='touch-vitals';this.vitals.innerHTML='<div class="touch-hp"><i></i><b></b></div><div class="touch-mp"><i></i><b></b></div>';game.ui.el.hud.appendChild(this.vitals);
   }
   skin(){
@@ -43,15 +42,6 @@ export class TouchControls {
     for(const [selector,slot,label]of [['.touch-attack',0,'普攻'],['.touch-secondary',1,p.skills[1].name],['.touch-dodge',5,p.skills[5].name]]){
       const b=this.el.querySelector(selector);b.innerHTML=`<span class="action-art">${p.skills[slot].icon}</span><span class="action-cooldown"></span><small class="action-label">${label}</small>`;
     }
-  }
-  drawMap(){
-    const g=this.g,lv=g.level,ctx=this.minimap.getContext('2d'),s=Math.min(184/lv.w,140/lv.h),ox=(200-lv.w*s)/2,oz=(156-lv.h*s)/2;
-    ctx.clearRect(0,0,200,156);ctx.fillStyle='#091715e8';ctx.fillRect(0,0,200,156);ctx.fillStyle='#34514b';
-    for(let z=0;z<lv.h;z++)for(let x=0;x<lv.w;x++)if(lv.isFloor(x,z))ctx.fillRect(ox+x*s,oz+z*s,s+.2,s+.2);
-    const dot=(p,color,r)=>{ctx.fillStyle=color;ctx.beginPath();ctx.arc(ox+p.x/4*s,oz+p.z/4*s,r,0,Math.PI*2);ctx.fill();};
-    const t=g.story.guidance();if(t)dot(t,'#e0bd73',3);
-    for(const e of g.enemies)if(e.alive&&e.pos.distanceTo(g.player.pos)<22)dot(e.pos,'#e77c68',e.T.boss?3.5:1.8);
-    dot(g.player.pos,'#b7fff0',3.3);ctx.strokeStyle='#b29459';ctx.lineWidth=2;ctx.strokeRect(1,1,198,154);
   }
   reset(){this.releaseStick?.();this.stick=null;this.attack=this.secondary=false;if(this.g.player)this.g.player.manualMove=null;this.el.hidden=true;this.el.querySelector('#move-stick i').style.transform='translate(-50%,-50%)';}
   active(){const g=this.g;return innerWidth>innerHeight&&g.started&&g.player?.alive&&!g.cinematic&&!g.paused&&!g.ui.panelOpen;}
@@ -95,9 +85,9 @@ export class TouchControls {
     if(this.stick){p.stop();p.queued=null;p.interactTarget=null;}
     if(this.attack)this.cast(0);if(this.secondary)this.cast(1);
     for(const [selector,slot]of [['.touch-attack',0],['.touch-secondary',1],['.touch-dodge',5]]){const b=this.el.querySelector(selector),s=p.skills[slot],cd=p.cds[s.id]??0;b.querySelector('.action-cooldown').textContent=cd>.5?Math.ceil(cd):'';b.classList.toggle('cooling',cd>.5);}
-    if(g.time>(this.mapAt??-1)){this.mapAt=g.time+.35;this.drawMap();}
     const o=this.nearby();const interact=this.el.querySelector('.touch-interact');interact.querySelector('.interact-caption').textContent=o?(o.kind==='npc'?'交谈':o.kind==='chest'?'开启':'拾取'):'交互';interact.setAttribute('aria-label',o?(o.kind==='npc'?'交谈 · ':o.kind==='chest'?'开启 · ':'拾取 · ')+o.name:'附近交互');interact.classList.toggle('nearby',!!o);
     this.potions[0].querySelector('b').textContent=p.potions.hp;this.potions[1].querySelector('b').textContent=p.potions.mp;
+    for(const b of this.potions){b.classList.toggle('cooling',p.potionCd>0);b.dataset.cooldown=p.potionCd>0?Math.ceil(p.potionCd):'';}
     this.el.querySelector('.touch-lock').textContent=this.target?.alive?'锁定：'+this.target.name:'自动锁敌';
   }
 }

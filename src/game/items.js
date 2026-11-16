@@ -96,7 +96,7 @@ export const LEGENDARIES = [
   { id: 'boneweaver', name: '织骨者', base: 'scythe', cls: 'necro', flag: 'boneweaver', power: '白骨长矛命中时在目标处引爆一具尸体般的骨爆。' },
   { id: 'silentbell', name: '缄默钟舌', base: 'amulet', flag: 'silentbell', power: '每 8 秒，下一次受到的伤害被完全抵消。', boss: true },
   { id: 'gravewalker', name: '掘墓者之靴', base: 'boots', flag: 'gravewalker', power: '击杀敌人后 3 秒内移动速度提高 30%。' },
-  { id: 'bloodring', name: '血契之戒', base: 'ring', flag: 'bloodring', power: '暴击时回复 3% 最大生命。' },
+  { id: 'bloodring', name: '血契之戒', base: 'ring', flag: 'bloodring', power: '命中暴击时回复 2% 最大生命（每 1.2 秒最多一次）。' },
 ];
 
 function rollAffixes(it, n) {

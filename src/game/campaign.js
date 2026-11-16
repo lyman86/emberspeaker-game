@@ -38,7 +38,7 @@ export class Campaign extends Episode1 {
       await g.loadLevel('camp');this.quest();return;
     }
     if(id==='forest_intro'){
-      if(!f.road){f.road=true;ui.banner('灰须林驿道','失落驿站 → 三座图腾 → 黑泽村');await ui.say([['薇拉','驿道上的苔藓都变黑了。那些村民死后会留下毒雾，别停在尸体旁。'],['薇拉','先找到翻倒的马车。跟随金色路标，我会替你听着林中的钟声。']]);this.quest();g.save();}return;
+      if(!f.road){f.road=true;ui.banner('灰须林驿道','失落驿站 → 三座图腾 → 黑泽村');await ui.say([['薇拉','驿道上的苔藓都变黑了。那些村民死后会留下毒雾，别停在尸体旁。'],['薇拉','先找到翻倒的马车。沿驿道向北，到村口找找活人的踪迹。']]);this.quest();g.save();}return;
     }
     if(id==='village_intro'){
       if(!f.village){f.village=true;ui.banner('黑泽村','教堂避难所 · 向西寻找猎人哈罗德');ui.toast('暖色灯火处是教堂补给点');g.save();}return;

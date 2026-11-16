@@ -1,3 +1,4 @@
+import {updatePortals} from './portals.js';
 import {saltProp,saltScenery} from './salt-art.js';
 import {ironProp} from './iron-art.js';
 import * as THREE from 'three';
@@ -404,11 +405,13 @@ export class Level {
   }
 
   update(dt) {
+    updatePortals(this,dt);
     for (let i = this.anim.length - 1; i >= 0; i--) if (!this.anim[i](dt)) this.anim.splice(i, 1);
     if (this.bell) this.bell.rotation.z = Math.sin(this.game.time * 1.3) * 0.05 * (this.bellSwing ?? 1);
   }
 
   dispose() {
+    for(const p of this.portals?.values()??[])p.dispose();this.portals?.clear();
     this.group.traverse(o=>{o.userData.ironDispose?.();o.userData.saltDispose?.();});
     const sharedGeometry=new Set(),sharedMaterial=new Set(Object.values(this.game.materials.cache));
     if(this.game.decals){sharedGeometry.add(this.game.decals.geo);for(const list of Object.values(this.game.decals.mats))for(const m of list)sharedMaterial.add(m);}
