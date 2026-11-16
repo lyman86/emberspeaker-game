@@ -8,7 +8,7 @@ import {portalAvailable,TRANSITIONS} from '../src/game/portals.js';
 import {createPortal} from '../src/game/portal-art.js';
 const noop=()=>{},oldRandom=Math.random;let seed=19;Math.random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
 const results=[];
-for(const cls of Object.keys(CLASSES))for(const level of [6,10,13,16]){
+for(const cls of Object.keys(CLASSES))for(const level of [6,10,13,16,18]){
  const tiers=[];
  for(const [rarity,stars] of [['rare',0],['legendary',3]]){
   const p=Object.create(Player.prototype);Object.assign(p,{cls,C:CLASSES[cls],level,equip:{},buffs:{},game:{ui:{refreshStats:noop}},hp:1,maxHp:1});
@@ -47,7 +47,7 @@ Math.random=oldRandom;
  const g={run:{mode:'story'},story:{stage:'graveyard',flags:{},second:{},third:{},fourth:{mirrors:[]}}};assert(portalAvailable(g,'crypt_door'));assert(!portalAvailable(g,'north_road'));assert(!portalAvailable(g,'root_gate'));assert(!portalAvailable(g,'iron_road'));assert(!portalAvailable(g,'salt_road'));g.story.stage='done';assert(portalAvailable(g,'north_road'));assert(!portalAvailable(g,'tomb_entry'));g.story.fourth.mirrors=['west','east'];assert(portalAvailable(g,'tomb_entry'));g.run.mode='chapter';assert(!portalAvailable(g,'north_road'));
  const p=createPortal({low:true},new T.Vector3());for(let i=0;i<100;i++)p.update(.016,true);let count=0;p.root.traverse(o=>{if(o.isMesh)count++});assert(count<=9);assert(new T.Box3().setFromObject(p.root).getSize(new T.Vector3()).toArray().every(Number.isFinite));p.dispose();p.dispose();assert(TRANSITIONS.root_gate);
 }
-console.log('All five classes × four boss levels × two gear tiers: six majors defeat a stationary hero, dodging four leaves a recoverable margin; recovery proc budgets, potion sharing and portal availability passed.');
+console.log('All five classes × five boss levels × two gear tiers: six majors defeat a stationary hero, dodging four leaves a recoverable margin; recovery proc budgets, potion sharing and portal availability passed.');
 // Exercise the actual shared minimap draw path for every authored map.
 {
  const {Minimap}=await import('../src/game/minimap.js'),{LEVELS}=await import('../src/game/maps.js'),originalDocument=globalThis.document;
@@ -56,4 +56,4 @@ console.log('All five classes × four boss levels × two gear tiers: six majors 
  try{for(const factory of Object.values(LEVELS)){const spec=factory(),d=spec.def,g={story:{stage:'done',flags:{},second:{},third:{},fourth:{}},run:{mode:'story'},player:{pos:new T.Vector3(d.start.x*4+2,0,d.start.z*4+2),facing:0},enemies:[],npcs:[],level:{spec,w:d.w,h:d.h,def:d,gates:Object.fromEntries(d.gates.map(x=>[x.id,x])),isFloor:(x,z)=>d.g[z][x]!=='#'}};const map=new Minimap(g,{appendChild:noop});map.update(1);assert(caption.textContent.length>0);}}
  finally{globalThis.document=originalDocument;}assert(calls>100);
 }
-console.log('Desktop/touch minimap draw commands use finite coordinates on all eight maps.');
+console.log('Desktop/touch minimap draw commands use finite coordinates on all ten maps.');

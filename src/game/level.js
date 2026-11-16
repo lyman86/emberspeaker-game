@@ -1,3 +1,4 @@
+import {harborProp,harborScenery} from './harbor-art.js';
 import {updatePortals} from './portals.js';
 import {saltProp,saltScenery} from './salt-art.js';
 import {ironProp} from './iron-art.js';
@@ -11,7 +12,7 @@ export function containsTrigger(t, pos) {
   return Math.hypot(pos.x-(t.x*CELL+2),pos.z-(t.z*CELL+2))<t.r;
 }
 const hash = (x, z) => { const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return s - Math.floor(s); };
-const RADIUS = { '@house':2.8,'@church':2.8,'@mill':2.8,'@well':1.5, pillar: 1.15, pillar_decorated: 1.3, barrel_large: 1.15, crates_stacked: 1.5, keg: 1.3, table_long_decorated_A: 1.6,
+const RADIUS = {'@harbor_bell':2,'@harbor_winch':.7,'@harbor_bollard':.5,'@harbor_brazier':.35, '@house':2.8,'@church':2.8,'@mill':2.8,'@well':1.5, pillar: 1.15, pillar_decorated: 1.3, barrel_large: 1.15, crates_stacked: 1.5, keg: 1.3, table_long_decorated_A: 1.6,
   trunk_large_A: 1.0, barrel_small_stack: 1.5, '@grave': 0.75, '@tree': 0.8, '@campfire': 1.5, '@bell': 2.4, statue: 1.3, cabinet: 1.2 };
 
 /** Old map prop names -> photo-scanned replacements (scale in world units per metre; '@' = procedural). */
@@ -203,7 +204,7 @@ export class Level {
         continue;
       }
       const kind = { ',': 'dirt', ';': 'leaves', ':': 'altarFloor', '~':'mossy' }[ch] ?? 'stoneFloor';
-      (floors[this.spec.episode===4?(kind==='dirt'?'saltSand':'saltStone'):this.id==='forest'&&kind==='leaves'?'forestFloor':kind] ??= []).push(M(cx, 0, cz, Math.floor(h * 4) * (Math.PI / 2)));
+      (floors[this.spec.episode===5?(ch===';'?'wetDock':'wetStone'):this.spec.episode===4?(kind==='dirt'?'saltSand':'saltStone'):this.id==='forest'&&kind==='leaves'?'forestFloor':kind] ??= []).push(M(cx, 0, cz, Math.floor(h * 4) * (Math.PI / 2)));
     }
 
     // floor: one instanced quad per cell with photo-scanned PBR material (random 90° turns hide tiling)
@@ -215,7 +216,7 @@ export class Level {
       this.group.add(im);
     }
     // walls: solid blocks with masonry sides and rough rock tops
-    const wallMat = MAT.get(this.spec.episode===4?'saltWall':outdoor ? 'wall' : 'cryptWall', 1.5), topMat = MAT.get(this.spec.episode===4?'saltStone':'rockTop', 1.5);
+    const wallMat = MAT.get(this.spec.episode===5?'wetStone':this.spec.episode===4?'saltWall':outdoor ? 'wall' : 'cryptWall', 1.5), topMat = MAT.get(this.spec.episode===5?'wetStone':this.spec.episode===4?'saltStone':'rockTop', 1.5);
     const mkBoxes = (list, hgt) => {
       if (!list.length) return;
       const geo = new THREE.BoxGeometry(CELL, hgt, CELL);
@@ -241,7 +242,7 @@ export class Level {
         }
       });trunks.castShadow=branches.castShadow=true;this.group.add(trunks,branches);
     } else if(this.id==='saltflat'){mkBoxes([...tallBoxes,...lowBoxes],1.3);}
-    else if(this.id!=='swamp'){mkBoxes(tallBoxes, 4.6);mkBoxes(lowBoxes, 0.9);}
+    else if(this.id!=='swamp'&&this.spec.episode!==5){mkBoxes(tallBoxes, 4.6);mkBoxes(lowBoxes, 0.9);}
 
     // props
     for (const p of d.props) {
@@ -298,7 +299,7 @@ export class Level {
       this.solidGrid[gt.z * this.w + gt.x] = 1;
       this.gates[gt.id] = { ...gt, mesh: m, open: false };
     }
-    episodeScenery(this);saltScenery(this);
+    episodeScenery(this);saltScenery(this);harborScenery(this);
   }
 
   openGate(id) {
@@ -318,6 +319,7 @@ export class Level {
   }
 
   _special(p, cx, cz) {
+    if(harborProp(this,p,cx,cz))return;
     if(saltProp(this,p,cx,cz))return;
     if(ironProp(this,p,cx,cz))return;
     if(episodeProp(this,p,cx,cz))return;
@@ -412,13 +414,13 @@ export class Level {
 
   dispose() {
     for(const p of this.portals?.values()??[])p.dispose();this.portals?.clear();
-    this.group.traverse(o=>{o.userData.ironDispose?.();o.userData.saltDispose?.();});
+    this.group.traverse(o=>{o.userData.ironDispose?.();o.userData.saltDispose?.();o.userData.harborDispose?.();});
     const sharedGeometry=new Set(),sharedMaterial=new Set(Object.values(this.game.materials.cache));
     if(this.game.decals){sharedGeometry.add(this.game.decals.geo);for(const list of Object.values(this.game.decals.mats))for(const m of list)sharedMaterial.add(m);}
     for(const g of this.game.assets.gltf.values())g.scene.traverse(o=>{if(o.geometry)sharedGeometry.add(o.geometry);for(const m of [].concat(o.material??[]))sharedMaterial.add(m);});
     const geometries=new Set(),materials=new Set();
     this.group.traverse(o=>{
-      for(let p=o;p&&p!==this.group;p=p.parent)if(p.userData.saltDispose||p.userData.ironDispose)return;
+      for(let p=o;p&&p!==this.group;p=p.parent)if(p.userData.saltDispose||p.userData.ironDispose||p.userData.harborDispose)return;
       if(o.isInstancedMesh)o.dispose();
       if(o.geometry&&!sharedGeometry.has(o.geometry))geometries.add(o.geometry);
       for(const m of [].concat(o.material??[]))if(!sharedMaterial.has(m))materials.add(m);

@@ -11,4 +11,4 @@ export const bossAttack=(e,kind='heavy')=>e.T.boss?{kind,level:e.level}:undefine
 export const damageGrowth=raw=>raw<=8?raw:8+6*Math.log1p((raw-8)/6);
 export const POTION_COOLDOWN=10;
 
-export const recoveryFactor=p=>Math.min(p.plagueUntil>p.game.time?1-.12*(p.plagueStacks??0):1,p.woundUntil>p.game.time?.65:1,p.saltExposureUntil>p.game.time?1-.18*(p.saltExposure??0):1);
+export const recoveryFactor=p=>Math.min(p.drenchedUntil>p.game.time?1-.12*(p.drenched??0):1,p.plagueUntil>p.game.time?1-.12*(p.plagueStacks??0):1,p.woundUntil>p.game.time?.65:1,p.saltExposureUntil>p.game.time?1-.18*(p.saltExposure??0):1);

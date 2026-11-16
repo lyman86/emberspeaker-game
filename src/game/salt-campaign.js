@@ -119,7 +119,7 @@ export class SaltCampaign extends IronCampaign {
   const g=this.g,f=this.fourth,id=g.level.id;
   if(g.run?.mode==='boss'){const c=CHAPTERS[g.run.chapter-1];return g.ui.setQuest('Boss 挑战 · '+c.title,`击败<b>${c.bossName}</b>。可先分配技能点；倒下后可重新挑战，故事存档独立保留。`);}
   if(id==='saltflat')return g.ui.setQuest('盐沙古墓 · 双碑引光',f.mirrors.length<2?`清理东西导流碑的守军，再靠近引光。（${f.mirrors.length}/2）<br>可选：荒原西北侧的<b>避风护符</b>可削弱最终沙暴。`:'日轮石门已开。沿北方遗址进入<b>沙埋神殿</b>，寻找铸钟图纸。');
-  if(id==='salttomb')return g.ui.setQuest(f.done?'第四集 完 · 铸钟之罪':'盐沙古墓 · 铸钟图纸',!f.priest?'击败<b>封尸祭司</b>。两侧共鸣盐晶会保护他，先破晶；控制可以打断封尸仪式。':!f.bossDead?'击败<b>盐之女王</b>。破坏召唤盐晶，沙暴时进入<b>青色安全区</b>，利用破晶后的收招窗口。':!f.done?'靠近中央石台，取走<b>古代铸钟图纸</b>。本集没有新钟，无需反鸣。':'图纸已取得。可返回营地补给与强化。下一站：<b>沉钩之港</b>（后续章节）。');
+  if(id==='salttomb')return g.ui.setQuest(f.done?'第四集 完 · 铸钟之罪':'盐沙古墓 · 铸钟图纸',!f.priest?'击败<b>封尸祭司</b>。两侧共鸣盐晶会保护他，先破晶；控制可以打断封尸仪式。':!f.bossDead?'击败<b>盐之女王</b>。破坏召唤盐晶，沙暴时进入<b>青色安全区</b>，利用破晶后的收招窗口。':!f.done?'靠近中央石台，取走<b>古代铸钟图纸</b>。本集没有新钟，无需反鸣。':'图纸已取得。返回营地补给，从<b>南行海路</b>前往<b>沉钩之港</b>。');
   if(this.third.done&&['camp','fortress'].includes(id))return g.ui.setQuest(f.done?'铸钟之罪 · 线索已得':'西行 · 盐沙古墓',f.done?'可从<b>西行盐道</b>重返古墓刷装备，或在营地强化。下一站：沉钩之港。':'<b>西行盐道</b>已开放。前往灰盐荒原，寻找古代铸钟图纸；建议等级 13。');
   return super.quest();
  }

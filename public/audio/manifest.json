@@ -421,6 +421,46 @@
       "gain": 0.65,
       "wet": 0.2,
       "pitch": 0.07
+    },
+    "h_surge": {
+      "files": [
+        "episode5/surge.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.2,
+      "pitch": 0.035
+    },
+    "h_chain": {
+      "files": [
+        "episode5/chain.wav"
+      ],
+      "gain": 0.65,
+      "wet": 0.2,
+      "pitch": 0.035
+    },
+    "h_lure": {
+      "files": [
+        "episode5/lure.wav"
+      ],
+      "gain": 0.7,
+      "wet": 0.2,
+      "pitch": 0.035
+    },
+    "h_plank": {
+      "files": [
+        "episode5/plank.wav"
+      ],
+      "gain": 0.4,
+      "wet": 0.2,
+      "pitch": 0.035
+    },
+    "h_roar": {
+      "files": [
+        "roar_0.mp3"
+      ],
+      "gain": 0.85,
+      "wet": 0.4,
+      "pitch": 0.025
     }
   },
   "amb": {
@@ -447,6 +487,10 @@
     "amb_mill": {
       "file": "episode2/mill_bed.m4a",
       "gain": 0.26
+    },
+    "amb_sea": {
+      "file": "episode5/sea.wav",
+      "gain": 0.95
     }
   },
   "music": {

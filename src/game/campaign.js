@@ -80,7 +80,7 @@ export class Campaign extends Episode1 {
       g.fx.ground(p,{tex:'magic1',color:[3,2.2,0.8],r0:1,r1:25,dur:2,spin:1});
       if(g.level.bellGlow)g.level.bellGlow.visible=false;g.level.bellSwing=0;
       g.level.emitters=g.level.emitters.filter(e=>e.kind!=='bellmist');
-      await ui.say([['烬语者',`以${count===1?'缄默钥舌':count===2?'两枚钟舌':'三枚钟舌'}奏反鸣。亡者归土，余烬归火。`],['薇拉',`${name}，从此沉寂。七口钟中的这一口，不会再惊扰亡者。`]]);
+      await ui.say([['烬语者',`以${count===1?'缄默钥舌':count===2?'两枚钟舌':count===3?'三枚钟舌':count+'枚钟舌'}奏反鸣。亡者归土，余烬归火。`],['薇拉',`${name}，从此沉寂。七口钟中的这一口，不会再惊扰亡者。`]]);
     } finally {g.cinematic=false;}
     ui.toast('反鸣完成 · '+name);
   }
@@ -119,8 +119,8 @@ export class Campaign extends Episode1 {
   async _ending() {
     await super._ending();
     this.quest();
-    this.g.ui.banner('北行驿道已开放','跟随金色路标 · 第二集《腐林疫歌》');
-    this.g.ui.toast('画面中的金色箭头会引导你前往当前任务目标');
+    this.g.ui.banner('北行驿道已开放','营地北侧 · 第二集《腐林疫歌》');
+    this.g.ui.toast('小地图中可查看出口，任务栏会记录当前目标');
   }
   guidance() {
     const g=this.g,f=this.second,id=g.level.id;

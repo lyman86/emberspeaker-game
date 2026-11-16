@@ -12,12 +12,12 @@ const SCANS = {
 export function levelResources(spec,cls) {
   const models=new Set(['mx:anims','mx:'+PROFILES[CLASSES[cls].profile].file,'coin_stack_small']);
   for(const p of [...spec.def.spawns.map(s=>ENEMY_TYPES[s.type].model),...spec.def.npcs.map(n=>n.model)].filter(Boolean))models.add('mx:'+PROFILES[p].file);
-  for(const s of spec.def.spawns){for(const profile of ({boss:['minion','warrior'],stag:['minion'],ironking:['rebel'],saltqueen:['warrior','mage'],saltpriest:['mage']})[s.type]??[])models.add('mx:'+PROFILES[profile].file);}
+  for(const s of spec.def.spawns){for(const profile of ({boss:['minion','warrior'],stag:['minion'],ironking:['rebel'],saltqueen:['warrior','mage'],saltpriest:['mage'],angler:['drowned']})[s.type]??[])models.add('mx:'+PROFILES[profile].file);}
   if(cls==='necro')models.add('mx:'+PROFILES.skeleton.file);
   if(spec.def.spawns.some(s=>ENEMY_TYPES[s.type].proj==='arrow'))models.add('Skeleton_Arrow');
-  const materials=new Set([...SHARED_MATERIALS,'stoneFloor',...(spec.episode===4?['saltWall','saltStone']:['wall','cryptWall','rockTop'])]);
+  const materials=new Set([...SHARED_MATERIALS,'stoneFloor',...(spec.episode===5?['wetDock','wetStone','mossy']:spec.episode===4?['saltWall','saltStone']:['wall','cryptWall','rockTop'])]);
   for(const row of spec.def.g)for(const ch of row) {
-    const name=spec.episode===4?(ch===','?'saltSand':ch==='#'?null:'saltStone'):({',':'dirt',';':spec.id==='forest'?'forestFloor':'leaves',':':'altarFloor','~':'mossy'})[ch];
+    const name=spec.episode===5?(ch==='#'?null:ch===';'?'wetDock':'wetStone'):spec.episode===4?(ch===','?'saltSand':ch==='#'?null:'saltStone'):({',':'dirt',';':spec.id==='forest'?'forestFloor':'leaves',':':'altarFloor','~':'mossy'})[ch];
     if(name)materials.add(name);
   }
   for(const p of spec.def.props){

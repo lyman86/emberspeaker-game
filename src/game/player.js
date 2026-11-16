@@ -346,7 +346,7 @@ export class Player extends Actor {
 
   revive(at) {
     this.plagueStacks=0;this.plagueUntil=0;
-    this.potionCd=0;this._lifeHitAt=0;this._bloodAt=0;this.woundUntil=0;this.saltExposure=0;this.saltExposureUntil=0;
+    this.potionCd=0;this._lifeHitAt=0;this._bloodAt=0;this.woundUntil=0;this.drenched=0;this.drenchedUntil=0;this.saltExposure=0;this.saltExposureUntil=0;
     this.alive = true; this.hp = this.maxHp; this.mp = this.maxMp * this.C.res.start; this.lock = 0; this.pending = null; this.path = [];
     this.pos.set(at.x, 0, at.z);
     this.play('Idle', { restart: true });
@@ -494,7 +494,7 @@ export class Player extends Actor {
         }
         this.locomote('Running_A', speed);
         this.stepT -= dt;
-        if (this.stepT <= 0) { this.stepT = 0.17 / Math.max(0.6, this.current?.timeScale ?? 1) + 0.08; const L = g.level, ch = L.def.g[L.cellOf(this.pos.z)]?.[L.cellOf(this.pos.x)]; g.audio.play(ch === ';' ? 'step_leaves' : (ch === ',' || L.spec.floor === 'dirt') && ch !== ':' ? 'step_dirt' : 'step_stone'); if ((this.cls === 'warrior' || this.cls === 'paladin') && Math.random() < 0.5) g.audio.play('clink', null, 0.8); if (g.level.spec.floor === 'dirt') g.smoke.emit({ pos: { x: this.pos.x, y: 0.15, z: this.pos.z }, count: 1, speed: [0.1, 0.5], life: [0.5, 0.9], size: [0.7, 1.2], c0: [0.2, 0.17, 0.14], c1: [0.1, 0.09, 0.08], alpha: 0.25, grow0: 0.5, grow1: 1.4, tex: 'smoke' }); }
+        if (this.stepT <= 0) { this.stepT = 0.17 / Math.max(0.6, this.current?.timeScale ?? 1) + 0.08; const L = g.level, ch = L.def.g[L.cellOf(this.pos.z)]?.[L.cellOf(this.pos.x)]; g.audio.play(L.spec.episode===5&&ch===';'?'h_plank':ch === ';' ? 'step_leaves' : (ch === ',' || L.spec.floor === 'dirt') && ch !== ':' ? 'step_dirt' : 'step_stone'); if ((this.cls === 'warrior' || this.cls === 'paladin') && Math.random() < 0.5) g.audio.play('clink', null, 0.8); if (g.level.spec.floor === 'dirt') g.smoke.emit({ pos: { x: this.pos.x, y: 0.15, z: this.pos.z }, count: 1, speed: [0.1, 0.5], life: [0.5, 0.9], size: [0.7, 1.2], c0: [0.2, 0.17, 0.14], c1: [0.1, 0.09, 0.08], alpha: 0.25, grow0: 0.5, grow1: 1.4, tex: 'smoke' }); }
       } else if (this.currentName !== 'Idle' && this.lock <= 0 && !this.pending) this.play('Idle', { fade: 0.2 });
     }
     if (this.gem && Math.random() < 0.3) {

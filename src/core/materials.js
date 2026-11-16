@@ -5,6 +5,8 @@ import * as THREE from 'three';
  * arm = ambient occlusion (R), roughness (G), metalness (B).
  */
 export const PBR_SETS = {
+  wetDock:{id:'weathered_brown_planks',tint:0x8e9c91},
+  wetStone:{id:'slate_floor_03',tint:0x9eaba6},
   saltSand:{id:'brown_mud_rocks_01',tint:0xd6c49b,pom:.02},
   saltStone:{id:'monastery_stone_floor',tint:0xe0d5bb,pom:.035},
   saltWall:{id:'medieval_blocks_02',tint:0xc4bc9f},
@@ -69,6 +71,13 @@ export class Materials {
       color: S.tint ?? 0xffffff, roughness: 1, metalness: 1, aoMapIntensity: 0.9,
     });
     m.normalScale.set(1.2, 1.2);
+    if(['wetDock','wetStone'].includes(name)){
+      m.roughness=.48;m.metalness=.06;m.normalScale.set(.65,.65);
+      m.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <alphamap_fragment>',`#include <alphamap_fragment>
+        float wetLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+        diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.022,.028,.03)+wetLuma*vec3(.83,1.,1.08),.72);`);};
+      m.customProgramCacheKey=()=> 'harbor-wet-stone-v1';
+    }
     if (S.pom && this.pom !== false) addParallax(m, S.pom);
     if(name==='saltSand'){
       const before=m.onBeforeCompile;

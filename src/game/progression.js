@@ -2,6 +2,7 @@ export const MAX_LEVEL = 30;
 // First episode ends around level six; later levels remain spaced for future episodes.
 export const XP_TABLE = [0, 70, 190, 390, 700, 1150, 1800, 2700, 3900, 5500, ...Array.from({length:20}, (_,i)=>9000 + i*3000 + i*i*350)];
 export const MATERIALS = {
+  barnacle:{name:'沉潮藤壶',price:24,desc:'第五集特产 · 可出售'},
   salt:{name:'灰盐晶砂',price:22,desc:'第四集特产 · 可出售'},
   insignia:{name:'铁冠徽片',price:18,desc:'第三集特产 · 可出售'},
   iron: {name:'铁屑',price:3}, soul:{name:'魂晶',price:15}, star:{name:'星辉碎片',price:60},

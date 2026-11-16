@@ -91,3 +91,10 @@ PROFILES.blackknight={file:'paladin_pc',builtinGear:[0,2,3],map:SOLDIER};
 PROFILES.ironking={file:'paladin_pc',builtinGear:[0,2,3],map:{...SOLDIER,attack:['ss_power',.1,.85,.5]}};
 
 PROFILES.saltqueen={file:'vera',scale:1.15,map:{Idle:'idle_plain',Idle_B:'idle_plain',Running_A:'run',Walking_A:'m_walk',Hit_A:'hit',Death_A:'fall_back',Death_B:'fall_back',attack:['cast2h',.25,.85,.5],Spellcast_Raise:'area',Spellcast_Summon:'summon'}};
+
+PROFILES.drowned={file:'warrior',map:PROFILES.warrior.map};
+PROFILES.pirate={file:'arissa',map:{...SOLDIER,Idle:'idle_plain',Running_A:'run'}};
+PROFILES.barnacle={file:'elite',map:PROFILES.elite.map};
+PROFILES.tidewitch={file:'mage',map:PROFILES.mage.map};
+PROFILES.hookcaptain={file:'bram',map:{...SOLDIER,Spellcast_Raise:'ss_powerup'}};
+PROFILES.angler={file:'boss',map:PROFILES.boss.map};

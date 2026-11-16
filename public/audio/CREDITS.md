@@ -77,3 +77,8 @@
 - 怪物专用：`e_claw`（爪击）、`e_hit`（怪物击中英雄）、`e_throw`（掷骨）、`e_summon`（Boss 召唤）、`e_blink`（Boss 瞬移）、`e_spikes`（Boss 骨刺爆发）
 - 英雄专用：`warcry`（战吼，含合成号角声）、`raise`（召唤骷髅）、`corpseburst`（尸爆）
 - 掉落提示：`legendary`（传奇掉落）、`raredrop`（稀有掉落）、`itemdrop`（丢弃物品）
+
+
+## Episode 5 · original maritime sounds (2026-11-16)
+
+`episode5/sea.wav`, `surge.wav`, `chain.wav`, `lure.wav`, and `plank.wav` are original deterministic DSP audio generated for this project by `tools/make-harbor-audio.py` (filtered noise, modal tones and envelopes; no sampled third-party recordings). They may be distributed with this game. `h_roar` reuses the already credited `roar_0.mp3` recording above; it does not introduce a new download. These files are loaded only with episode 5 moods/effects.

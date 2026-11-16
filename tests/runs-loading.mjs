@@ -31,7 +31,7 @@ assert(!MENU_RESOURCES.models.includes('mx:boss'));assert(!MENU_RESOURCES.models
 const flat=levelResources(LEVELS.saltflat(),'mage');assert(!flat.models.includes('mx:boss'));assert(!flat.models.includes('mx:minion'));assert(!flat.models.includes('ph:GothicCabinet_01'));
 const camp=levelResources(LEVELS.camp(),'mage');assert(!camp.models.includes('mx:boss'));assert(!camp.models.includes('mx:elite'));assert(!camp.materials.includes('forestFloor'));
 for(const c of CHAPTERS){const spec=LEVELS[c.bossMap]();spec.def.spawns=spec.def.spawns.filter(e=>e.type===c.boss);const list=levelResources(spec,'mage').models;
- for(const child of ({boss:['minion','warrior'],stag:['minion'],ironking:['rebel'],saltqueen:['warrior','mage']})[c.boss])assert(list.includes('mx:'+PROFILES[child].file),'boss summon model');}
+ for(const child of ({boss:['minion','warrior'],stag:['minion'],ironking:['rebel'],saltqueen:['warrior','mage'],angler:['drowned']})[c.boss])assert(list.includes('mx:'+PROFILES[child].file),'boss summon model');}
 // Concurrent requests deduplicate; failures can retry; release skips retained shared models.
 {
  const a=new Assets(),calls=[],disposed=[];let fail=true;
@@ -48,13 +48,15 @@ for(const c of CHAPTERS){const spec=LEVELS[c.bossMap]();spec.def.spawns=spec.def
 assert.equal(runSaveKey('mage'),'emberspeaker.save.mage');assert.equal(runSaveKey('mage',true),'emberspeaker.qa.mage');
 for(const mode of ['chapter','boss'])for(const c of CHAPTERS)for(const cls of Object.keys(CLASSES)){
  const setup=challengeSetup(mode,c.id),p=Object.assign(Object.create(Player.prototype),{cls,C:CLASSES[cls],skills:CLASS_SKILLS[cls],buffs:{},game:{ui:{refreshStats:noop}},refreshGear:noop});
- prepareChallengePlayer(p,setup);assert.equal(p.level,mode==='boss'?c.bossLevel:c.level);assert(p.skillPoints>=0);assert.equal(p.hp,p.maxHp);assert(Object.values(p.equip).length>=6);assert(!setup.flags.ep4?.done);
+ prepareChallengePlayer(p,setup);assert.equal(p.level,mode==='boss'?c.bossLevel:c.level);assert(p.skillPoints>=0);assert.equal(p.hp,p.maxHp);assert(Object.values(p.equip).length>=6);if(c.id<5)assert(!setup.flags.ep4?.done);else{assert(setup.flags.ep4.done);assert.equal(setup.flags.tongues,3);}
  if(c.id===1)assert(!setup.flags.bossDead);if(c.id>1)assert(setup.flags.bossDead);if(c.id>2)assert(setup.flags.ep2.done);if(c.id>3)assert(setup.flags.ep3.done);
 }
 // Recorded loops request only the active mood, and episode-two effects are not fetched by other chapters.
 {
- const a=new GameAudio(),calls=[];a.ctx={};a._applyLoops=noop;a.setMood=m=>{a.mood=m;};a.manifest={sfx:{hit:{files:['hit.mp3']},e_wolf:{files:['episode2/wolf.mp3']}},amb:{amb_wind:{file:'wind.mp3'},amb_swamp:{file:'episode2/swamp.mp3'},amb_cave:{file:'cave.mp3'}},music:{mus_crypt:{file:'crypt.mp3'}}};a.loadOverrides=async()=>{a.loops??={};a.pending??=new Map();return a.manifest;};a._file=async f=>{calls.push(f);return {};};
- await a.prepare('salt',4);assert(!calls.some(f=>f.startsWith('episode2/')));assert(!calls.includes('cave.mp3'));
+ const a=new GameAudio(),calls=[];a.ctx={};a._applyLoops=noop;a.setMood=m=>{a.mood=m;};a.manifest={sfx:{hit:{files:['hit.mp3']},e_wolf:{files:['episode2/wolf.mp3']},h_surge:{files:['episode5/surge.wav']}},amb:{amb_wind:{file:'wind.mp3'},amb_swamp:{file:'episode2/swamp.mp3'},amb_cave:{file:'cave.mp3'},amb_sea:{file:'episode5/sea.wav'}},music:{mus_crypt:{file:'crypt.mp3'}}};a.loadOverrides=async()=>{a.loops??={};a.pending??=new Map();return a.manifest;};a._file=async f=>{calls.push(f);return {};};
+ await a.prepare('salt',4);assert(!calls.some(f=>f.startsWith('episode2/')));assert(!calls.includes('cave.mp3'));assert(!calls.some(f=>f.startsWith('episode5/')));
+ await a.prepare('wreck',5);assert(calls.includes('episode5/surge.wav'));assert(a.loops.amb_sea);assert(a.overrides.h_surge);
+ await a.prepare('salt',4);assert(!a.overrides.h_surge);assert(!a.loops.amb_sea);
  await a.prepare('swamp',2);assert(calls.includes('episode2/wolf.mp3'));assert(a.loops.amb_swamp);assert(!a.loops.amb_wind);
  await a.prepare('salt',4);assert(!a.overrides.e_wolf);assert(!a.loops.amb_swamp);
 }

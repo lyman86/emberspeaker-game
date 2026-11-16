@@ -41,6 +41,7 @@ function camp() {
   d.start = { x: 12, z: 25 };
   d.room(18,16,20,18,',').room(18,18,18,19,',');
   d.trigger('north_road',19,16,{r:3,label:'北行驿道 · 第二集'});
+  d.room(11,27,13,28,',');d.trigger('harbor_road',12,28,{r:2.6,label:'南行海路 · 第五集'});
   d.room(1,23,4,25,',');d.trigger('salt_road',1,24,{r:3,label:'西行盐道 · 第四集'});
   d.room(20,20,23,22,',');d.trigger('iron_road',23,21,{r:3,label:'东行山道 · 第三集'});
 
@@ -339,4 +340,46 @@ function salttomb(){
  return {id:'salttomb',name:'沙埋神殿 · 盐后陵寝',sub:'铸钟者留下的第一份罪证',episode:4,floor:'tile',audio:'salt_tomb',def:d,
  mood:{bg:0x111e24,fog:.009,hemi:[0x9fc1c3,0x3c352a,1.2],key:[0xc7edf0,1.55],exposure:1.25,playerLight:32}};
 }
-export const LEVELS = { camp, crypt, forest, swamp, pass, fortress, saltflat, salttomb };
+// ------------------------------------------------------------------ 第五集：沉钩之港
+function harbor(){
+ const d=carve(43,59);d.start={x:21,z:54};
+ d.room(16,48,26,56,':').room(20,38,22,49,';').room(13,28,29,38,':');
+ d.room(6,29,10,51,';').room(9,35,14,37,';').room(32,29,37,51,';').room(28,35,33,37,';');
+ d.room(20,24,22,29,';').room(14,11,28,24,';').room(20,7,22,12,';').room(15,3,27,8,':');
+ d.g[26][20]='#';d.g[26][22]='#';d.gate('dock_chain',21,26);
+ d.trigger('harbor_return',21,57,{r:3,label:'返回霜暮营地'});d.room(20,56,22,57,';');
+ d.trigger('harbor_intro',21,50,{r:6});d.trigger('beacon_west',7,33,{r:3,label:'点亮西引航灯'}).trigger('beacon_east',35,32,{r:3,label:'点亮东引航灯'});
+ d.trigger('tide_ward',35,47,{r:3,label:'领取旧领航符'}).trigger('captain_intro',21,21,{bounds:[14,11,28,24]});
+ d.trigger('wreck_entry',21,4,{r:3,label:'前往沉船墓场'});
+ d.npc('harbor_merchant',23,51,{name:'渡鸦婆婆 · 莫娅',model:'vera'}).npc('harbor_vera',19,52,{name:'薇拉',model:'vera'});
+ for(const [type,x,z]of [['drowned',20,43],['drowned',22,42],['pirate',16,36],['tidewitch',24,32],['drowned',18,30],['pirate',27,35],['barnacle',15,29],['drowned',7,38],['pirate',9,35],['tidewitch',8,31],['drowned',35,38],['pirate',34,33],['tidewitch',36,30],['drowned',21,24],['pirate',16,18],['barnacle',26,17]])d.spawn(type,x,z,{level:16});
+ d.spawn('barnacle',35,46,{tag:'harbor_ward',level:17,tough:true});d.spawn('hookcaptain',21,16,{tag:'hookcaptain',level:17,asleep:true});
+ for(const [x,z]of [[7,33],[35,32],[35,47],[20,49],[28,36],[14,22],[28,12]])d.deco(x,z,'@harbor_brazier');
+ d.deco(7,34,'@harbor_winch').deco(35,33,'@harbor_winch').deco(3,43,'@harbor_crane',{rot:.3}).deco(39,23,'@harbor_wreck',{rot:-.4});
+ for(const [x,z]of [[10,50],[32,50],[13,37],[29,28],[14,12],[28,23]])d.deco(x,z,'@harbor_bollard');
+ d.deco(14.5,53,'@harbor_wreck',{rot:.15}).deco(28,52,'@harbor_crane',{rot:-.25});
+ d.deco(17,55,'@harbor_bollard').deco(25,53,'@harbor_bollard').deco(20,55,'@harbor_brazier');
+ d.block(17,52,'crates_stacked').block(24,55,'barrel_large').block(16,49,'crates_stacked').block(26,49,'barrel_large').block(26,14,'barrel_large');
+ d.chest(7,48,{gold:300,potions:['hp','mp'],golden:true}).chest(25,55,{gold:220,potions:['mp']});
+ return {id:'harbor',name:'雾岛港口 · 沉钩之港',sub:'第五集 · 航灯背后的活人',episode:5,floor:'wood',audio:'harbor',def:d,mood:{bg:0x101d25,fog:.007,hemi:[0x9bbdc8,0x3b5159,1.6],key:[0xb2cfd8,2.1],exposure:1.28,playerLight:24}};
+}
+function wreck(){
+ const d=carve(43,55);d.start={x:21,z:51};
+ d.room(17,46,25,53,';').room(20,37,22,47,';').room(14,28,28,38,':');
+ d.room(8,27,13,37,';').room(12,32,15,34,';').room(29,27,34,37,';').room(27,32,30,34,';');
+ d.room(20,18,22,29,';').room(14,4,28,20,':');d.g[23][20]='#';d.g[23][22]='#';d.gate('tide_chain',21,23);
+ d.trigger('wreck_return',21,53,{r:2.6,label:'返回雾岛港口'}).trigger('wreck_intro',21,47,{r:4});
+ d.trigger('angler_intro',21,17,{bounds:[14,4,28,20]}).trigger('tide_bell',21,5,{r:3,label:'潮汐之钟 · 反鸣'});
+ d.trigger('harbor_camp',15,5,{r:3,label:'余烬归途 · 返回营地'});
+ d.spawn('tidechain',11,29,{tag:'chain_west',level:17}).spawn('tidechain',31,29,{tag:'chain_east',level:17});
+ for(const [type,x,z]of [['drowned',20,44],['pirate',22,42],['barnacle',17,35],['tidewitch',24,34],['drowned',20,30],['pirate',12,33],['barnacle',10,31],['tidewitch',11,28],['drowned',30,33],['pirate',33,30],['tidewitch',31,28],['barnacle',25,29],['drowned',20,26],['drowned',22,26]])d.spawn(type,x,z,{level:17});
+ d.spawn('angler',21,10,{tag:'angler',level:18,asleep:true});
+ d.npc('wreck_log',18,50,{name:'浸水的运单',model:null});
+ d.block(21,3,'@harbor_bell');d.deco(12,11,'@harbor_wreck',{rot:.3,s:1.3}).deco(30,14,'@harbor_wreck',{rot:-.45,s:1.2}).deco(4,43,'@harbor_crane',{rot:.4});
+ d.deco(10,29,'@harbor_winch').deco(32,29,'@harbor_winch');
+ for(const [x,z]of [[17,48],[25,46],[14,34],[28,35],[14,19],[28,19],[15,4],[27,4]])d.deco(x,z,'@harbor_brazier');
+ for(const [x,z]of [[14,10],[28,10],[15,20],[27,20],[17,37],[25,37]])d.deco(x,z,'@harbor_bollard');
+ d.chest(9,36,{gold:340,potions:['hp','mp'],golden:true}).chest(33,36,{gold:320,potions:['hp']});
+ return {id:'wreck',name:'沉船墓场 · 潮汐王座',sub:'断开钟链 · 让第四口钟沉寂',episode:5,floor:'wood',audio:'wreck',def:d,mood:{bg:0x0b1b23,fog:.0075,hemi:[0x8fb8c6,0x354951,1.55],key:[0xa8c8d3,2],exposure:1.25,playerLight:30}};
+}
+export const LEVELS = { camp, crypt, forest, swamp, pass, fortress, saltflat, salttomb, harbor, wreck };

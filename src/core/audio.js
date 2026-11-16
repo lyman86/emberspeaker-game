@@ -5,6 +5,7 @@
  * Ambience loops (amb_*) and music tracks (mus_*) from the manifest replace the
  * synthesized wind and generative score.
  */
+const HARBOR_SOUNDS=['h_surge','h_chain','h_lure','h_plank','h_roar'];
 const NOTE = (n) => 440 * Math.pow(2, (n - 69) / 12);
 
 export class GameAudio {
@@ -73,6 +74,7 @@ export class GameAudio {
     if(!this.pending.has(key))this.pending.set(key,(async()=>{
       try {
         const bufs=await Promise.all(e.files.map(f=>this._file(f)));
+        if(HARBOR_SOUNDS.includes(name)&&this.episode!==5)return;
         if(!name.startsWith('e_')||!['e_villager','e_goblin','e_wolf','e_witch','e_butcher','e_poison','e_roots'].includes(name)||this.episode===2)
           this.overrides[name]={bufs,gain:e.gain??1,wet:e.wet??.2,pitch:e.pitch??.06};
       }catch(err){console.warn('audio',name,err);}
@@ -102,8 +104,9 @@ export class GameAudio {
   async prepare(mood,episode) {
     this.episode=episode;this.setMood(mood);
     const plague=['e_villager','e_goblin','e_wolf','e_witch','e_butcher','e_poison','e_roots'];
+    if(episode!==5)for(const name of HARBOR_SOUNDS)delete this.overrides[name];
     if(episode!==2)for(const name of plague)delete this.overrides[name];
-    await Promise.all([this.loadMood(),...['hit','hurt','swing','coin','potion','pickup',...(episode===2?plague:[])].map(name=>this.loadSound(name))]);
+    await Promise.all([this.loadMood(),...['hit','hurt','swing','coin','potion','pickup',...(episode===2?plague:[]),...(episode===5?HARBOR_SOUNDS:[])].map(name=>this.loadSound(name))]);
   }
 
   /** Start / cross-fade the recorded ambience and music for the current mood. */
@@ -128,7 +131,7 @@ export class GameAudio {
   }
 
   _wanted() {
-    return { salt:['amb_wind','mus_crypt'],salt_tomb:['amb_cave','mus_crypt'],salt_boss:['amb_wind','mus_boss'],iron:['amb_wind','amb_fire','mus_crypt'],fortress:['amb_cave','amb_fire','mus_crypt'],iron_boss:['amb_fire','mus_boss'],camp: ['amb_wind', 'amb_fire', 'mus_camp'], crypt: ['amb_cave', 'mus_crypt'], boss: ['amb_cave', 'mus_boss'],forest:['amb_forest','mus_crypt'],swamp:['amb_swamp','mus_crypt'],mill:['amb_forest','amb_mill','mus_crypt'],plague_boss:['amb_swamp','mus_boss'], none: [] }[this.mood] ?? [];
+    return { harbor:['amb_sea','mus_crypt'],wreck:['amb_sea','mus_crypt'],harbor_boss:['amb_sea','mus_boss'],salt:['amb_wind','mus_crypt'],salt_tomb:['amb_cave','mus_crypt'],salt_boss:['amb_wind','mus_boss'],iron:['amb_wind','amb_fire','mus_crypt'],fortress:['amb_cave','amb_fire','mus_crypt'],iron_boss:['amb_fire','mus_boss'],camp: ['amb_wind', 'amb_fire', 'mus_camp'], crypt: ['amb_cave', 'mus_crypt'], boss: ['amb_cave', 'mus_boss'],forest:['amb_forest','mus_crypt'],swamp:['amb_swamp','mus_crypt'],mill:['amb_forest','amb_mill','mus_crypt'],plague_boss:['amb_swamp','mus_boss'], none: [] }[this.mood] ?? [];
   }
 
   /** True while a recorded music track is playing (the generative score then stays silent). */
