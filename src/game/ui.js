@@ -30,6 +30,7 @@ export class UI {
     this.el.lootTray=h('section','loot-tray','<header><div><small>FIELD SPOILS</small><b>附近战利品 <span></span></b></div><button type="button" aria-expanded="false">展开全部</button></header><div class="loot-grid"></div><p>点击装备，走近拾取</p>');
     this.el.portalCaption=h('div','portal-caption');this.el.portalCaption.hidden=true;this.el.labels.appendChild(this.el.portalCaption);
     this.el.lootTray.hidden=true;this.el.labels.appendChild(this.el.lootTray);this.el.lootGrid=this.el.lootTray.querySelector('.loot-grid');
+    this.gearOffers=[];this.el.gearOffer=h('aside','gear-offer');this.el.gearOffer.hidden=true;this.el.gearOffer.setAttribute('aria-label','新装备推荐');this.el.gearOffer.setAttribute('aria-live','polite');document.body.appendChild(this.el.gearOffer);
     this.el.lootTray.querySelector('button').onclick=()=>{this.lootExpanded=!this.lootExpanded;this._lootAt=0;};
     this.el.bossDetails=h('div','boss-details','<span class="boss-phase"></span><span class="boss-intent"></span><div class="poise-track"><i></i></div>');this.el.target.appendChild(this.el.bossDetails);
     this.el.ailment=h('div','player-ailment');this.el.hud.appendChild(this.el.ailment);
@@ -57,6 +58,7 @@ export class UI {
   }
 
   show() {
+    this.gearOffers=[];this.gearOfferItem=null;this.el.gearOffer.hidden=true;
     this.el.hud.classList.remove('hidden');
     const pl = this.game.player, s = pl.skills;
     this.el.hint.innerHTML = `左键 移动 / ${s[0].name} · 右键 ${s[1].name} · Q W E 技能 · 空格 ${s[5].name} · 1 / 2 药水 · R 大招 · 技能上方 + 强化 · I 背包 · Esc 菜单`;
@@ -277,7 +279,7 @@ export class UI {
     if (open) { this.el.bag.classList.remove('hidden'); this.refreshBag(); this.game.audio.play('ui'); }
   }
 
-  closePanels() { this.el.growth.classList.add('hidden'); this.el.bag.classList.add('hidden'); this.el.shop.classList.add('hidden'); this.hideTip(); this.shopMode = null; }
+  closePanels() { this.el.growth.classList.add('hidden'); this.el.bag.classList.add('hidden'); this.el.shop.classList.add('hidden'); this.hideTip(); this.shopMode = null; this.el.gearOffer.hidden=true;this.gearOfferItem=null; }
 
   refreshStats() { if (!this.el.bag.classList.contains('hidden')) this.refreshBag(); }
 
@@ -318,6 +320,9 @@ export class UI {
       const d = h('div', 'cell' + (it ? ' r-' + it.rarity + (canEquip(pl.cls, it) ? '' : ' na') : ''), it ? this.icon(it) : '');
       d.dataset.i = i;
       if (it) {
+        const advice=pl.compareGear(it);d.classList.toggle('gear-upgrade',advice.upgrade);
+        if(advice.status!=='normal'){const badge=h('b','gear-badge '+advice.status,advice.upgrade?'↑ 提升':advice.status==='choice'?'◇ 特效':'× 职业');d.appendChild(badge);d.title=advice.label;d.setAttribute('aria-label',it.name+' · '+advice.label);}
+
         d.onmouseenter = () => !this.drag && this.showTip(it, pl.equip[it.slot], this.shopMode ? 'sell' : 'bag');
         d.onmouseleave = () => {if(!this.game.touchMode)this.hideTip();};
         this._dragSource(d, { i }, () => { if (this.shopMode) this.sell(i); else { pl.equipFromBag(i); this.hideTip(); this.refreshBag(); } });
@@ -336,6 +341,42 @@ export class UI {
        ${s.cdr ? `<div><span>冷却缩减</span><b>${Math.round(s.cdr)}%</b></div>` : ''}${s.lifeHit ? `<div><span>击中回复</span><b>${Math.round(Math.min(s.lifeHit,pl.maxHp*.015))}<small> / 0.65秒</small></b></div>` : ''}`;
     P.querySelector('.goldline b').textContent = pl.gold;
     P.querySelector('.hint').innerHTML = this.game.touchMode?'点击物品查看详情，再选择装备、卸下或出售':this.shopMode ? '左键 / 右键：出售给商人' : '左键 装备/卸下 · 右键 丢弃 · 拖动可整理，拖到面板外即丢弃';
+  }
+
+  gearComparisonHtml(cmp) {
+    if(cmp.status==='unusable')return '<div class="gear-comparison unusable"><b>职业不符</b><span>当前职业无法装备此物品。</span></div>';
+    if(cmp.status==='unusable')return '<div class="gear-comparison unusable">当前职业无法装备</div>';
+    const percent=v=>(v>=0?'+':'')+(v*100).toFixed(1)+'%';
+    return `<div class="gear-comparison ${cmp.status}"><b>${cmp.upgrade?'↑ ':cmp.status==='choice'?'◇ ':''}${cmp.label}</b><span>预估输出 ${percent(cmp.attack)} · 生存 ${percent(cmp.defence)}</span>${cmp.note?`<span>${cmp.note}</span>`:''}<small>按本职业面板估算，传奇特效需按流派选择。</small></div>`;
+  }
+
+  offerGear(it) {
+    if(!this.game.player.compareGear(it).upgrade)return;
+    this._gearOfferAt=0;this.gearOffers??=[];if(!this.gearOffers.includes(it)){this.gearOffers.push(it);if(this.game.enemies.some(e=>e.alive&&!e.asleep&&e.pos.distanceTo(this.game.player.pos)<18))this.toast('发现更好装备：'+it.name+' · 脱离战斗后可选择装备');}
+  }
+
+  updateGearOffer(dt=1) {
+    this._gearOfferAt=(this._gearOfferAt??0)-dt;if(this._gearOfferAt>0)return;this._gearOfferAt=.2;
+    const g=this.game,p=g.player,card=this.el.gearOffer;
+    this.gearOffers=(this.gearOffers??[]).filter(it=>p.bag.includes(it)&&p.compareGear(it).upgrade);
+    const it=this.gearOffers[0];
+    const danger=g.enemies.some(e=>e.alive&&!e.asleep&&e.pos.distanceTo(p.pos)<18);
+    const blocked=!it||!p.alive||g.cinematic||g.paused||g.loadingLevel||g.runFinished||this.drag||danger||(this.panelOpen&&!this.shopMode);
+    card.hidden=!!blocked;if(blocked){this.gearOfferItem=null;return;}
+    if(this.gearOfferItem===it)return;this.gearOfferItem=it;this.renderGearOffer(it,p.compareGear(it));
+  }
+
+  renderGearOffer(it,cmp) {
+    const card=this.el.gearOffer;
+    card.innerHTML=`<header><small>GEAR DISCOVERED</small><span>适合${this.game.player.C.name}的新装备</span></header><div class="gear-offer-item"><div class="gear-offer-art">${this.icon(it)}</div><div><b style="color:${RARITY[it.rarity].color}">${it.name}</b><p>${SLOT_NAMES[it.slot]} · Lv.${it.ilvl}${it.stars?' · '+'★'.repeat(it.stars):''}</p><p>替换：${cmp.current?.name??'当前空位'}</p></div></div>${this.gearComparisonHtml(cmp)}<footer><button type="button" class="equip-new">立即装备</button><button type="button" class="keep-new">暂不装备</button></footer><small class="gear-offer-remaining">${this.gearOffers.length>1?'另有 '+(this.gearOffers.length-1)+' 件待比较 · ':''}装备已放入背包，可稍后选择</small>`;
+    card.querySelector('.equip-new').onclick=()=>this.resolveGearOffer(true);
+    card.querySelector('.keep-new').onclick=()=>this.resolveGearOffer(false);
+  }
+
+  resolveGearOffer(equip) {
+    const p=this.game.player,it=this.gearOfferItem;if(!it||this.gearOffers?.[0]!==it)return;const i=p.bag.indexOf(it);
+    if(equip&&i>=0&&p.compareGear(it).upgrade){if(p.equipFromBag(i)){this.toast('已装备：'+it.name);this.refreshBag();}}
+    this.gearOffers?.shift();this.gearOfferItem=null;this.el.gearOffer.hidden=true;this.game.input?.swallow();
   }
 
   /** Click-or-drag behaviour for an item element. from = { i } (bag) or { slot } (equipped). */
@@ -507,6 +548,7 @@ export class UI {
   // ================================================================== tooltips
   _itemHtml(it, title = '', cmp = null) {
     const R = RARITY[it.rarity], b = BASES[it.base], pl = this.game.player;
+    const recommendation=pl.equip[it.slot]===it||title?null:pl.compareGear(it);
     it={...it,...enhancedStats(it)}; if(cmp)cmp={...cmp,...enhancedStats(cmp)};
     const delta = (a, c) => { if (c == null || a === c) return ''; const d = a - c; return `<em class="${d > 0 ? 'up' : 'dn'}">${d > 0 ? '▲' : '▼'} ${Math.abs(Math.round(d * 10) / 10)}</em>`; };
     const lines = [];
@@ -514,6 +556,7 @@ export class UI {
     if (it.armor) lines.push(`<div class="big">${it.armor} <small>护甲</small>${cmp ? delta(it.armor, cmp.armor ?? 0) : ''}</div>`);
     for (const a of it.affixes) lines.push(`<div class="af">◆ ${affixText(a)}</div>`);
     if (it.power) lines.push(`<div class="pw">${it.power}</div>`);
+    if(recommendation)lines.push(this.gearComparisonHtml(recommendation));
     const who = b.cls ? b.cls.map((c) => CLASSES[c].name).join(' / ') : '所有职业';
     return `${title ? `<div class="tt">${title}</div>` : ''}<div class="hd"><div><div class="nm" style="color:${R.color}">${it.name} ${'★'.repeat(it.stars??0)}</div>
       <div class="ty">${R.name}${b.name}</div></div><img src="${this.game.gear.icon(it)}"></div>
@@ -704,6 +747,7 @@ export class UI {
       n.el.style.transform = `translate(${s.x + n.vx * k}px, ${s.y - 60 * (1 - (1 - k) ** 2)}px) translate(-50%,-50%) scale(${k < 0.12 ? 0.6 + k * 5 : 1.2 - k * 0.3})`;
       n.el.style.opacity = k > 0.6 ? 1 - (k - 0.6) / 0.4 : 1;
     }
+    this.updateGearOffer(dt);
     this.minimap.update(dt);
     const portal=[...g.level.portals?.values()??[]].filter(p=>p.root.position.distanceTo(pl.pos)<11).sort((a,b)=>a.root.position.distanceToSquared(pl.pos)-b.root.position.distanceToSquared(pl.pos))[0];
     const caption=this.el.portalCaption;caption.hidden=!portal||g.cinematic||this.panelOpen;

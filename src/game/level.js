@@ -117,6 +117,16 @@ export class Level {
   }
   /** A* on the grid, then string-pulled. Returns world-space waypoints (excluding the start). */
   findPath(ax, az, bx, bz) {
+    // Interactions target the centre of a chest/NPC. Choose a reachable approach
+    // on this side of its footprint, rather than the geometrically nearest wall side.
+    if(this.blocked(bx,bz,.7)){
+      const angle=Math.atan2(az-bz,ax-bx);
+      for(let d=.8;d<=3.21;d+=.4)for(let i=0;i<24;i++){
+        const a=angle+(i%2?1:-1)*Math.ceil(i/2)*Math.PI/12,x=bx+Math.cos(a)*d,z=bz+Math.sin(a)*d;
+        if(this.blocked(x,z,.7))continue;
+        const path=this.findPath(ax,az,x,z);if(path.length)return path;
+      }
+    }
     const free=this.nearestFree(bx,bz,0.7);
     if(!free)return [];bx=free.x;bz=free.z;
     if (this.clear(ax, az, bx, bz)) return [{ x: bx, z: bz }];

@@ -4,7 +4,7 @@ import { Actor } from './actor.js';
 import { CLASS_SKILLS } from './skills.js';
 import { CLASSES } from './classes.js';
 import { PROFILES } from './models.js';
-import { makeItem, canEquip, syncUid, BASES } from './items.js';
+import { makeItem, canEquip, syncUid, BASES, LEGENDARIES } from './items.js';
 import { XP_TABLE, earnedPoints, freeRank, requiredLevel, spentPoints, canUpgradeSlot, enhancedStats, enhance, salvageMaterials, MATERIALS } from './progression.js';
 import { SwingTrail, aegisMaterial, energyMaterial } from './vfx.js';
 
@@ -354,10 +354,33 @@ export class Player extends Actor {
   }
 
   // ------------------------------------------------------------------ inventory
-  addItem(it) {
+  /** Compare unbuffed, enhanced equipment through the same stat rules as actual equipping. */
+  compareGear(it) {
+    if(!it||!canEquip(this.cls,it))return {status:'unusable',label:'职业不符',upgrade:false};
+    const current=this.equip[it.slot];
+    const profile=equip=>{
+      const p=Object.assign(Object.create(Player.prototype),{C:this.C,cls:this.cls,level:this.level,equip,buffs:{},game:{}});p.recalc();const st=p.stats;
+      const attack=p.dmgMul*(1+Math.min(100,st.crit)*st.critDmg/10000)*p.atkSpeed*Math.pow(1/(1-Math.min(40,st.cdr)/100),.35);
+      const recovery=st.regen*.35+Math.min(st.lifeHit,p.maxHp*.015)/.65;
+      const defence=p.maxHp/(1-p.dr)*(1+Math.min(.15,recovery/p.maxHp*3));
+      const utility=Math.pow(1+st.move/100,.15)*Math.pow(1+st.resRegen/Math.max(5,Math.abs(this.C.res.regen)),.1)*Math.pow(p.maxMp/this.C.res.max,.05);
+      return {attack,defence,score:Math.pow(attack,.6)*Math.pow(defence,.4)*utility};
+    };
+    const before=profile(this.equip),after=profile({...this.equip,[it.slot]:it}),gain=after.score/before.score-1;
+    const result={current,gain,attack:after.attack/before.attack-1,defence:after.defence/before.defence-1};
+    const special=LEGENDARIES.find(l=>l.id===it.legendary);
+    if(special?.cls&&special.cls!==this.cls)return {...result,status:'choice',label:'特效不适用',upgrade:false,note:'这件传奇的专属特效适合'+CLASSES[special.cls].name};
+    if(current?.flag&&current.flag!==it.flag)return {...result,status:'choice',label:'特效取舍',upgrade:false,note:'替换会失去当前传奇特效，请按技能搭配选择'};
+    if((!current&&(gain>.001||it.flag))||gain>.005)return {...result,status:'upgrade',label:current?'面板提升':'空位可装备',upgrade:true,note:it.power?'同时获得传奇特效，收益取决于技能搭配':''};
+    if(it.flag&&it.flag!==current?.flag)return {...result,status:'choice',label:'新传奇特效',upgrade:false,note:'面板没有明显提升，可按传奇特效选择'};
+    return {...result,status:'normal',label:gain<-.005?'面板下降':'提升不明显',upgrade:false};
+  }
+
+  addItem(it, {notify=true}={}) {
     const i = this.bag.indexOf(null);
     if (i < 0) return false;
     this.bag[i] = it;
+    if(notify)this.game.ui?.offerGear?.(it);
     return true;
   }
 
@@ -378,7 +401,7 @@ export class Player extends Actor {
   unequip(slot) {
     const it = this.equip[slot];
     if (!it) return false;
-    if (!this.addItem(it)) { this.game.ui.toast('背包已满'); return false; }
+    if (!this.addItem(it,{notify:false})) { this.game.ui.toast('背包已满'); return false; }
     this.equip[slot] = null;
     this.recalc();
     this.refreshGear();

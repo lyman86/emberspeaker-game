@@ -167,3 +167,5 @@ await import('./balance.mjs');
 await import('./encounter-balance.mjs');
 
 await import('./harbor.mjs');
+
+await import('./inventory.mjs');

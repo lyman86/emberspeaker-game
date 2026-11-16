@@ -4,6 +4,7 @@ import { Gfx } from './core/gfx.js';
 import { Particles } from './core/particles.js';
 import { GameAudio } from './core/audio.js';
 import { Materials } from './core/materials.js';
+import {lootLanding} from './game/loot-placement.js';
 import { Level, CELL, containsTrigger } from './game/level.js';
 import { LEVELS } from './game/maps.js';
 import { Actor } from './game/actor.js';
@@ -377,7 +378,7 @@ class Game {
     this.level.group.add(mesh);
     let lid = null;
     mesh.traverse((o) => { if (!lid && /lid/i.test(o.name)) lid = o; });
-    this.level.circles.push({ x: p.x, z: p.z, r: 1.1 });
+    this.level.addModelCollider('ph:treasure_chest',p.x,p.z,mesh.scale.x,mesh.rotation.y,'chest');
     const opened = this.story.flags['chest_' + this.level.id + c.x + '_' + c.z];
     if (opened && lid) lid.rotation.x = -1.9;
     this.chests.push({ ...c, pos: p, mesh, lid, open: !!opened, kind: 'chest', name: c.golden ? '镀金宝箱' : '旧木箱' });
@@ -412,8 +413,7 @@ class Game {
       mesh.add(glass, nk);
     }
     const a = rnd(0, 6.28), r = toss ? rnd(1.6, 2.6) : rnd(0.3, 1.2);
-    const target = new THREE.Vector3(at.x + Math.cos(a) * r, 0, at.z + Math.sin(a) * r);
-    if (this.level.blocked(target.x, target.z, 0.4)) target.set(at.x, 0, at.z);
+    const target = lootLanding(this.level,at,{x:at.x+Math.cos(a)*r,z:at.z+Math.sin(a)*r},this.player);
     mesh.position.set(at.x, 0.6, at.z);
     this.gfx.scene.add(mesh);
     this.loot.push({ kind, value, mesh, from: new THREE.Vector3(at.x, 0, at.z), target, t: 0 });
@@ -456,8 +456,7 @@ class Game {
       }
     }
     const a = rnd(0, 6.28), r = near ? rnd(0.8, 1.4) : rnd(1, 2.2);
-    const target = new THREE.Vector3(at.x + Math.cos(a) * r, 0, at.z + Math.sin(a) * r);
-    if (this.level.blocked(target.x, target.z, 0.4)) target.set(at.x, 0, at.z);
+    const target = lootLanding(this.level,at,{x:at.x+Math.cos(a)*r,z:at.z+Math.sin(a)*r},this.player);
     mesh.position.set(at.x, 0.6, at.z);
     this.gfx.scene.add(mesh);
     const label = this.ui.groundLabel(item);
@@ -472,6 +471,7 @@ class Game {
   }
 
   pickupItem(l) {
+    if(!this.loot.includes(l))return false;
     if (!this.player.addItem(l.item)) { this.ui.toast('背包已满'); this.audio.play('denied'); return; }
     this.audio.play('pickup');
     this.ui.number(this.player.pos, l.item.name, 'info');
@@ -486,10 +486,11 @@ class Game {
     for (let i = this.loot.length - 1; i >= 0; i--) {
       const l = this.loot[i];
       l.t += dt;
+      if(l.kind==='item'&&this.level.blocked(l.pos.x,l.pos.z,.75)){l.target.copy(lootLanding(this.level,l.pos,l.pos,pl));}
       const k = Math.min(1, l.t / 0.45);
       if (k < 1) { l.mesh.position.lerpVectors(l.from, l.target, k); l.mesh.position.y = Math.sin(k * Math.PI) * 1.8; }
       else if (l.kind === 'item') {
-        l.mesh.position.y = 0;
+        l.mesh.position.copy(l.pos);l.mesh.position.y = 0;
         const r = l.item.rarity, F = l.fx, w = this.gfx.time;
         if (F.beam) F.beam.material.opacity = (r === 'legendary' ? 0.32 : r === 'rare' ? 0.28 : 0.16) * (0.8 + 0.2 * Math.sin(w * 3 + l.t));
         if (F.disc) { F.disc.material.opacity = 0.34 + 0.1 * Math.sin(w * 2.4 + l.t); F.disc.rotation.y += dt * 0.3; }
@@ -607,7 +608,7 @@ class Game {
     let real = Math.min(0.05, this.clock.getDelta());
     if (!this.started) { if (this.ui.selecting) this.ui.updateSelect(real); return; }
     if(this.touchMode&&innerWidth<innerHeight){this.input.swallow();this.touch.reset();return;}
-    if (this.paused||this.loadingLevel) { this.input.pressed.length = 0; return; }
+    if (this.paused||this.loadingLevel) { this.ui.el.gearOffer.hidden=true;this.ui.gearOfferItem=null;this.input.pressed.length = 0; return; }
     let dt = real;
     if (this.stopT > 0) { this.stopT -= real; dt = 0; }
     if (this.slowT > 0) { this.slowT -= real; dt *= this.slowScale; }
