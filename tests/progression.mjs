@@ -173,3 +173,5 @@ await import('./inventory.mjs');
 await import("./winter.mjs");
 
 await import("./snow-revision.mjs");
+
+await import("./character-redesign.mjs");

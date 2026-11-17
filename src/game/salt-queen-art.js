@@ -7,6 +7,9 @@ const UP = new T.Vector3(0, 1, 0);
 /** An armoured, salt-entombed sovereign. Attachments are authored in the source
  * rig's bind pose, then batched by bone/material: no new texture downloads. */
 export function dressSaltQueen(e) {
+ // The complete salt-sovereign asset owns its tailored clothes and deform rig.
+ if(e.game.assets.gltf.has?.('mx:salt_sovereign')){for(const m of e.mats){if(e.game.gear?.env){m.envMap=e.game.gear.env;m.envMapIntensity=.7;}m.needsUpdate=true;}return {update(){},dispose(){}};}
+
   const source = e.game.assets.gltf.get('mx:vera')?.scene;
   if (!source) return { update() {}, dispose() {} };
   source.updateMatrixWorld(true);

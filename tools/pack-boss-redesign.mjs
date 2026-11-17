@@ -1,0 +1,9 @@
+import {NodeIO} from '@gltf-transform/core';import {ALL_EXTENSIONS} from '@gltf-transform/extensions';import {weld,dedup,resample,prune,textureCompress} from '@gltf-transform/functions';import sharp from 'sharp';import fs from 'node:fs';
+const io=new NodeIO().registerExtensions(ALL_EXTENSIONS);
+for(const [name,out]of [['abbess','winter_abbess'],['queen','salt_sovereign']]){
+ const d=await io.read('raw/character-redesign/'+name+'-rigged.glb');await d.transform(weld(),dedup(),resample({tolerance:1e-4}),textureCompress({encoder:sharp,targetFormat:'webp',resize:[1024,1024],quality:88}),prune({keepLeaves:true}));
+ // Exported Blender scene is Y-up in glTF. Fit its real mesh to 2.05 m and place its feet at the actor origin.
+ const [{GLTFLoader},T]=await Promise.all([import('three/addons/loaders/GLTFLoader.js'),import('three')]);const data=await io.writeBinary(d),loader=new GLTFLoader().register(p=>{const get=p.getDependency.bind(p);p.getDependency=(t,i)=>t==='texture'?Promise.resolve(new T.Texture()):get(t,i);return{name:'TOOL_TEXTURE'};});const g=await loader.parseAsync(data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength),'');const idle=g.animations.find(a=>a.name==='Idle');const mixer=new T.AnimationMixer(g.scene);if(idle){mixer.clipAction(idle).play();mixer.setTime(.01);}g.scene.updateMatrixWorld(true);g.scene.traverse(o=>o.skeleton?.update());const box=new T.Box3().setFromObject(g.scene,true),size=box.getSize(new T.Vector3()),c=box.getCenter(new T.Vector3()),k=2.05/size.y;
+ for(const scene of d.getRoot().listScenes()){const children=scene.listChildren(),root=d.createNode('ModelOrigin').setScale([k,k,k]).setTranslation([-c.x*k,-box.min.y*k,-c.z*k]);children.forEach(n=>root.addChild(n));scene.addChild(root);}
+ await io.write('public/assets/mx/'+out+'.glb',d);console.log(name,{bytes:fs.statSync('public/assets/mx/'+out+'.glb').size,size:size.toArray(),scale:k,animations:d.getRoot().listAnimations().map(a=>a.getName())});
+}

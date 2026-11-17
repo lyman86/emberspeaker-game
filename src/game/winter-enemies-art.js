@@ -4,7 +4,9 @@ const V=(x=0,y=0,z=0)=>new T.Vector3(x,y,z),UP=V(0,1,0),TAU=Math.PI*2;
 
 /** Bind-pose tailoring follows the Mixamo joints; no scene-global materials are mutated. */
 export function dressWinterEnemy(e){
- if(e.type==='snowyeti'||e.type==='frostgiant'){dressFrostCreature(e);return;}
+ if(e.type==='snowyeti'){dressSnowBeast(e);return;}
+ if(e.type==='winterabbess'){e.winterArtUpdate=()=>{};e.winterArtDispose=()=>{};return;}
+ if(e.type==='frostgiant'){dressFrostCreature(e);return;}
  const file=({frostthrall:'warrior',snowraider:'bram',icemaiden:'vera',frostmonk:'mage',frostgiant:'elite',winterabbess:'vera',frostseal:'mage'})[e.type];
  const source=e.game.assets?.gltf?.get('mx:'+file)?.scene,ownedGeo=new Set(),ownedMat=new Set(),attachments=[];
  let disposed=false,time=0,target;const clothTime={value:0};
@@ -179,4 +181,15 @@ function dressFrostCreature(e){
   if(!e.alive){body.rotation.x=-Math.min(1.4,(e.t??0)*2);head.rotation.x=-Math.min(.65,(e.t??0));}
  };
  e.winterArtDispose=()=>{if(disposed)return;disposed=true;body.removeFromParent();for(const g of geos)g.dispose();for(const m of mats)m.dispose();e.mats=e.mats.filter(m=>!mats.has(m));};
+}
+
+/** The new snow beast is a complete textured skinned mesh, not a head attached to a primitive body. */
+function dressSnowBeast(e){
+ for(const m of e.mats){if(m.name==='Glacial eyes')continue;m.roughness=.9;m.metalness=0;m.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+  float frostLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+  float fur=smoothstep(.001,.035,frostLuma);
+  vec3 iceFur=vec3(.74,.80,.83)*clamp(frostLuma*5.,.015,1.);
+  diffuseColor.rgb=mix(diffuseColor.rgb*.6,iceFur,fur*.94);
+ `);};m.customProgramCacheKey=()=> 'full-snowbeast-v3';m.needsUpdate=true;}
+ e.winterArtUpdate=()=>{};e.winterArtDispose=()=>{};
 }

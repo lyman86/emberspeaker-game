@@ -94,8 +94,9 @@ tools/fetch-assets.sh 重新下载素材（npm run assets）
 
 ## 素材与授权
 
-- **人物与怪物（写实）**：Adobe Mixamo 的角色和动作捕捉动画，已转换为 `public/assets/mx/` 下的 GLB（每个角色约 1MB，贴图压缩为 1024px WebP），所有角色共用一个动画库 `anims.glb`。Mixamo 素材可免费用于个人和商业项目（需遵守 Adobe 的条款，不能把模型文件本身单独转售或分发）。
-  - 五个职业角色、药剂师艾琳（Arissa）、罗兰、布拉姆、薇拉，以及全部怪物和 Boss 都来自 Mixamo
+- **人物与怪物（写实）**：Adobe Mixamo 的角色和动作捕捉动画，已转换为 `public/assets/mx/` 下的 GLB（每个角色约 1MB，贴图压缩为 1024px WebP），原有 Mixamo 角色共用动画库 `anims.glb`；本次替换的三位角色使用各自模型内嵌动画。Mixamo 素材可免费用于个人和商业项目（需遵守 Adobe 的条款，不能把模型文件本身单独转售或分发）。
+  - 五个职业角色、药剂师艾琳（Arissa）、罗兰、布拉姆、薇拉，以及多数原有怪物和 Boss 来自 Mixamo
+- **新完整角色模型（2026-11-17）**：雪兽基于 Eldritch Grim 的 Giant Mutant（CC0）；冬死修女长基于 CDmir / TinyWorlds 的 Old Lady（CC0）；盐之女王基于 [Alena (@aed) 的 Kalestra the Sorceress](https://sketchfab.com/3d-models/kalestra-the-sorceress-87637fba3f7c41d2bf23df2987185102)，使用 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)。完整来源、许可与改造见 [角色署名记录](public/assets/CHARACTER-REDESIGN-CREDITS.md)。
 - **场景材质与道具（写实扫描）**：Poly Haven（CC0）。地面、墙面、石材等 PBR 材质在 `public/assets/pbr/`（颜色 / 法线 / AO-粗糙度贴图），木箱、酒桶、雕像、铁门、火盆、宝箱、战锤等模型在 `public/assets/ph/`。
 - **技能特效贴图**：Kenney Particle Pack（CC0），合成为 `public/assets/fx/atlas.png`。特效另外用自写着色器实现：噪声溶解的能量环 / 刀光、沸腾的火球核心、投射物拖尾、武器挥砍光带、画面扭曲冲击波和热浪、飞溅的碎石骨片。
 - **装备模型和图标**：全部由代码程序化生成（`src/game/gear.js`），背包图标是实时渲染的 3D 模型。
@@ -171,3 +172,9 @@ tools/fetch-assets.sh 重新下载素材（npm run assets）
 第六集及后期装备机制见 [寒脊哀歌设计与验证](docs/episode6-design.md)。
 
 雪境怪物新增 Quaternius CC0 雪人与独眼冰巨怪，来源及改造见 [素材记录](public/assets/WINTER-CREATURES-CREDITS.md)。
+
+## 2026-11-17 · 完整角色替换
+
+雪人替换成完整兽形骨骼，修复源法线并加入短毛法线、冷色毛皮和细小眼睛；冬死修女长替换为有真实面部和衣物纹理的完整角色，增加贴合头部的修女服饰；盐之女王替换为带完整面部、金属饰边和长袍的女术士，重新绑定骨骼和随手移动的法典。三者使用模型自身动画，保留原先战斗数值、存档和按图加载。
+
+自动检查使用实际发行 GLB 验证骨骼变形、动作映射、包围盒、脚底、材质资源所有权与章节依赖。模型已用离线渲染检查站立和施法姿态；本轮浏览器连接超时，未完成游戏实景和实体手机帧率检查。

@@ -103,8 +103,10 @@ PROFILES.frostthrall={file:'warrior',map:PROFILES.warrior.map};
 PROFILES.snowraider={file:'bram',map:PROFILES.raider.map};
 PROFILES.icemaiden={file:'vera',map:PROFILES.saltqueen.map};
 PROFILES.frostmonk={file:'mage',map:{...PROFILES.mage.map,Spellcast_Raise:'summon'}};
-PROFILES.winterabbess={file:'vera',map:PROFILES.saltqueen.map};
+PROFILES.winterabbess={file:'winter_abbess',animations:'model',map:{Idle:'Idle',Idle_B:'Idle',Running_A:'Walk',Running_B:'Walk',Walking_A:'Walk',Walking_Backwards:'Walk',Hit_A:'Hit',Hit_B:'Hit',Death_A:'Death',Death_B:'Death',attack:['Strike',0,1,.58],Spellcast_Raise:['Cast',0,1,.55],Spellcast_Summon:['Cast',0,1,.55]}};
 
 const WINTER_CREATURE={Idle:'Idle',Idle_B:'Idle',Running_A:'Walk',Running_B:'Walk',Walking_A:'Walk',Walking_Backwards:'Walk',Hit_A:'HitRecieve',Hit_B:'HitRecieve',Death_A:'Death',Death_B:'Death',attack:['Bite_InPlace',0,1,.55],leap:['Jump',0,1,.8],Spellcast_Raise:['No',0,1,.6]};
-PROFILES.snowyeti={file:'snowyeti',animations:'model',lockRoot:['Body','MonsterArmature'],scale:1,map:WINTER_CREATURE};
+PROFILES.snowyeti={file:'snowbeast',animations:'model',lockRoot:['mixamorigHips'],scale:1,map:{Idle:'idle',Idle_B:'idle',Running_A:'Giant Run',Running_B:'Giant Run',Walking_A:'Giant Run',Walking_Backwards:'Giant Run',Hit_A:['Death',0,.14],Hit_B:['Death',0,.14],Death_A:'Death',Death_B:'Death',attack:['Right Punch',.1,.9,.55],leap:['Jump Slam',.265,.55,.83]}};
 PROFILES.frostgiant={file:'icegiant',animations:'model',lockRoot:['Body','MonsterArmature'],scale:1.25,map:WINTER_CREATURE};
+
+PROFILES.saltqueen={file:'salt_sovereign',animations:'model',map:{...PROFILES.winterabbess.map}};

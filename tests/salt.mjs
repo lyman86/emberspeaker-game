@@ -7,7 +7,7 @@ import {LEGENDARIES,rollDrop} from '../src/game/items.js';
 import {PROFILES} from '../src/game/models.js';
 import {readFileSync} from 'node:fs';
 const V=(x=0,z=0)=>new T.Vector3(x,0,z),noop=()=>{};
-const b=readFileSync('public/assets/mx/anims.glb'),j=JSON.parse(b.toString('utf8',20,20+b.readUInt32LE(12))),clips=new Set(j.animations.map(a=>a.name));
+const b=readFileSync('public/assets/mx/'+PROFILES.saltqueen.file+'.glb'),j=JSON.parse(b.toString('utf8',20,20+b.readUInt32LE(12))),clips=new Set(j.animations.map(a=>a.name));
 for(const spec of Object.values(PROFILES.saltqueen.map))assert(clips.has(Array.isArray(spec)?spec[0]:spec));
 {
  const opened=[],loads=[];let xp=0,finish=0;

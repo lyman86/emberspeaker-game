@@ -33,8 +33,9 @@ export class Assets {
             o.castShadow = true;
             o.receiveShadow = !mx;
             if (o.material) {
-              o.material.metalness = Math.min(o.material.metalness ?? 0, mx ? 0.05 : 0.1);
-              o.material.roughness = Math.max(o.material.roughness ?? 1, mx ? 0.62 : 0.75);
+              const authored=['mx:snowbeast','mx:winter_abbess','mx:salt_sovereign'].includes(name);
+              if(!authored)o.material.metalness = Math.min(o.material.metalness ?? 0, mx ? 0.05 : 0.1);
+              o.material.roughness = Math.max(o.material.roughness ?? 1, authored ? 0.22 : mx ? 0.62 : 0.75);
             }
           }
         });
@@ -121,13 +122,13 @@ export class Assets {
     const id = key + ':' + clipName;
     if (this._gs[id] != null) return this._gs[id];
     const P = PROFILES[key];
-    if(P.animations==='model')return(this._gs[id]=3.6*(P.scale??1)*MX_WORLD_SCALE);
     const clip = this._profileClips(key).clips.find((c) => c.name === clipName);
     if (!clip) return (this._gs[id] = 4);
     const root = SkeletonUtils.clone(this.gltf.get('mx:' + P.file).scene);
     const mixer = new THREE.AnimationMixer(root);
     mixer.clipAction(clip).play();
-    const feet = ['LeftFoot', 'RightFoot'].map((n) => { let b = null; root.traverse((o) => { if (!b && o.isBone && o.name.endsWith(n)) b = o; }); return b; }).filter(Boolean);
+    const feet = ['LeftFoot', 'RightFoot'].map((n) => { let b = null; root.traverse((o) => { if (!b && o.isBone && (o.name.endsWith(n)||o.name===({LeftFoot:'footL',RightFoot:'footR'})[n]||o.name===({LeftFoot:'foot.L',RightFoot:'foot.R'})[n])) b = o; }); return b; }).filter(Boolean);
+    if(!feet.length)return(this._gs[id]=3.6*(P.scale??1)*MX_WORLD_SCALE);
     const N = 90, dt = clip.duration / N, v = new THREE.Vector3();
     const tr = feet.map(() => []);
     for (let i = 0; i <= N; i++) {
