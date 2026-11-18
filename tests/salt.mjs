@@ -1,3 +1,4 @@
+import {BOSS_SOUNDS} from '../src/game/boss-sounds.js';
 import assert from 'node:assert/strict';
 import * as T from 'three';
 import {SaltCampaign} from '../src/game/salt-campaign.js';
@@ -33,10 +34,10 @@ for(const [type,id] of [['saltpriest','priest_intro'],['saltqueen','queen_intro'
 }
 function fixture(phase=1,index=0,type='saltqueen'){
  const effects=[],hits=[],p={pos:V(84,58),radius:.6,alive:true,hp:4000,invuln:0,buffs:{},has:()=>false,hurt(d){hits.push(d);this.hp-=d;}};
- const g={player:p,allies:[],enemies:[],low:true,cinematic:false,story:{fourth:{}},audio:{play:noop},ui:{toast:noop},smoke:{emit:noop},gfx:{scene:new T.Scene(),addShake:noop},fx:new Proxy({add(fn,dispose){effects.push({fn,dispose});}},{get:(o,k)=>o[k]??noop}),level:{center:(x,z)=>V(x*4+2,z*4+2),blocked:()=>false,nearestFree:(x,z)=>({x,z}),clear:()=>true},spawnEnemy(type,x,z,opts){const a={type,alive:true,pos:V(x,z),tag:opts.tag};g.enemies.push(a);return a;}};
+ const g={player:p,allies:[],enemies:[],projectiles:[],low:true,cinematic:false,story:{fourth:{}},audio:{play:noop},ui:{toast:noop},smoke:{emit:noop},gfx:{scene:new T.Scene(),addShake:noop,flash:noop},fx:new Proxy({add(fn,dispose){effects.push({fn,dispose});}},{get:(o,k)=>o[k]??noop}),level:{center:(x,z)=>V(x*4+2,z*4+2),blocked:()=>false,nearestFree:(x,z)=>({x,z}),clear:()=>true},spawnEnemy(type,x,z,opts){const a={type,alive:true,pos:V(x,z),tag:opts.tag};g.enemies.push(a);return a;}};
  const e={type,T:ENEMY_TYPES[type],game:g,pos:V(86,42),home:V(86,42),hp:ENEMY_TYPES[type].hp*(phase===3?.25:phase===2?.5:1),maxHp:ENEMY_TYPES[type].hp,level:16,alive:true,asleep:false,play:noop,playTimed:noop,_walk:noop,locomote:noop,face:noop,salt:{phase,index,rest:0,exposed:0}};g.enemies=[e];
  const step=t=>{for(let now=0;now<t-.001;now+=.025){saltUpdate(e,.025,p.pos.distanceTo(e.pos));for(let i=effects.length-1;i>=0;i--)if(effects[i].fn(.025)===false){effects[i].dispose?.();effects.splice(i,1);}}};
- const clear=()=>{for(const effect of effects)effect.dispose?.();assert.equal(g.gfx.scene.children.length,0);};return {g,e,p,hits,step,clear};
+ const clear=()=>{for(const p of g.projectiles){p.mesh.removeFromParent();p.mesh.traverse(o=>{o.geometry?.dispose();if(o.material)for(const m of [].concat(o.material))m.dispose();});}for(const effect of effects)effect.dispose?.();assert.equal(g.gfx.scene.children.length,0);};return {g,e,p,hits,step,clear};
 }
 {const f=fixture(1,1);f.step(.1);const c=f.e.salt.cast;assert.equal(c.kind,'fault');f.step(.9);assert.equal(f.hits.length,0);f.p.pos.copy(c.points[1]);f.step(.7);assert.equal(f.hits.length,1);f.step(.2);assert.equal(f.hits.length,1);f.clear();}
 {const f=fixture(1,1);f.step(.1);f.p.pos.copy(f.e.salt.cast.points[1]).add(V(0,6));f.step(1.8);assert.equal(f.hits.length,0);f.clear();}
@@ -50,3 +51,5 @@ for(const cls of ['mage','warrior','ranger','paladin','necro'])for(let i=0;i<20;
  const it=rollDrop(cls,16,2,4),leg=LEGENDARIES.find(l=>l.id===it.legendary);assert.equal(leg.episode,4);
 }
 console.log('Fourth-chapter gates, optional shelter, repeat-safe blueprint, boss dialogue, cast footprints, storm safety/mitigation, capped crystals, control breaks, prism gaps and chapter loot passed.');
+
+for(const [phase,index,kind] of [[1,0,'fan'],[1,1,'fault'],[1,2,'storm'],[2,0,'crown'],[3,0,'prism']]){const f=fixture(phase,index),sounds=[];f.g.audio.play=name=>sounds.push(name);f.step(.025);const cue=BOSS_SOUNDS[f.e.type][kind],c=f.e.salt.cast;assert(sounds.includes(cue[0]),kind+' warning');assert(!sounds.includes(cue[1]));f.step(c.windup-.05);assert(!sounds.includes(cue[1]),kind+' no early release');f.step(.1);assert.equal(sounds.filter(n=>n===cue[1]).length,1,kind+' release once');f.step(.05);assert.equal(sounds.filter(n=>n===cue[1]).length,1);f.clear();}

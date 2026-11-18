@@ -1,3 +1,4 @@
+import {bossSound} from './boss-sounds.js';
 import {bossAttack} from './combat.js';
 import * as T from 'three';
 import {inLane,inSector} from './stag.js';
@@ -62,7 +63,7 @@ function cast(e,kind){
   for(const lane of c.lanes)c.warnings.push(stagTelegraph(g,{kind:'charge',...lane,width:2.8,duration:c.windup}));
  } else c.warnings.push(stagTelegraph(g,{kind:kind==='crown'?'disc':'cleave',origin,dir,radius:kind==='crown'?8:16,angle:Math.PI*.7,duration:c.windup}));
  s.cast=c;s.poise=0;saltCasting(g,e,c);e.facing=Math.atan2(dir.x,dir.z);e.playTimed?.(kind==='fan'?'attack':'Spellcast_Raise',c.windup,{restart:true});
- e.intent={fan:'晶刃扇射 · 从弹道空隙穿过',fault:'盐棱断层 · 离开三处预警圆',storm:'盐沙风暴 · 青色圆环内安全',crown:'凝结盐冠 · 控制打断 / 破坏盐晶',prism:'六棱裁决 · 躲到射线之间'}[kind];g.audio.play(kind==='storm'?'raise':'e_spikes',origin,.65);
+ e.intent={fan:'晶刃扇射 · 从弹道空隙穿过',fault:'盐棱断层 · 离开三处预警圆',storm:'盐沙风暴 · 青色圆环内安全',crown:'凝结盐冠 · 控制打断 / 破坏盐晶',prism:'六棱裁决 · 躲到射线之间'}[kind];bossSound(e,kind,false,kind==='storm'?'raise':'e_spikes');
 }
 function chief(e,dt){
  const g=e.game;if(e.asleep||g.cinematic||!g.player.alive)return true;
@@ -73,7 +74,7 @@ function chief(e,dt){
  const c=s.cast;
  if(c){
   c.t+=dt;if(c.t<c.windup)return true;const t=c.t-c.windup;
-  if(!c.fired){c.fired=true;for(const w of c.warnings)w.stop();g.gfx.addShake(.25);
+  if(!c.fired){c.fired=true;bossSound(e,c.kind,true,'shatter');for(const w of c.warnings)w.stop();g.gfx.addShake(.25);
    if(c.kind==='fault')for(const p of c.points)spikes(g,p);
    if(c.kind==='fan')for(let i=-2;i<=2;i++)shard(e,c.dir.clone().applyAxisAngle(UP,i*.21),e.type==='saltqueen'?83:65);
    if(c.kind==='crown')makeSeals(e,e.type==='saltqueen'?3:2);

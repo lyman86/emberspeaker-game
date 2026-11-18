@@ -175,3 +175,5 @@ await import("./winter.mjs");
 await import("./snow-revision.mjs");
 
 await import("./character-redesign.mjs");
+
+await import("./boss-motion-sound.mjs");

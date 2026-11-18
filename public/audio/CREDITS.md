@@ -90,3 +90,7 @@
 `episode6/wind.wav`、`ice.wav`、`crack.wav`、`chant.wav` 由项目脚本 `tools/make-winter-audio.py` 使用标准库 DSP 原创合成，没有第三方采样或人声。分别用于暴雪风声、冰晶蓄力、冰裂重击和无词唱诗，按第六集加载。
 
 2026-11-16 雪境修订另增 `episode6/yeti.wav`（雪怪低吼）与 `episode6/snow.wav`（雪地扑击）；同由 `tools/make-winter-audio.py` 原创 DSP 合成，无第三方采样。
+
+## 双 Boss 独立招式声音（2026-11-18）
+
+`tools/make-boss-audio.py` 原创生成二十条立体声 WAV，无外部录音采样：盐后的晶刃/断层/沙暴/凝冠/六棱裁决、修女长的挥镰/冰枪/安魂曲/送葬/白夜葬雪，各一条蓄力与释放音。第四集仅加载 `sq_*`，第六集仅加载 `wa_*`，跨章释放。声音与真实技能的蓄力开始和首次释放帧绑定，打断蓄力不会播放释放音，不按持续伤害逐帧重放。

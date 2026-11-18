@@ -525,6 +525,166 @@
       "gain": 0.65,
       "wet": 0.3,
       "pitch": 0.03
+    },
+    "sq_blades_draw": {
+      "files": [
+        "episode4/blades_draw.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.26,
+      "pitch": 0.015
+    },
+    "sq_blades_release": {
+      "files": [
+        "episode4/blades_release.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.26,
+      "pitch": 0.015
+    },
+    "sq_fault_charge": {
+      "files": [
+        "episode4/fault_charge.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.26,
+      "pitch": 0.015
+    },
+    "sq_fault_break": {
+      "files": [
+        "episode4/fault_break.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.26,
+      "pitch": 0.015
+    },
+    "sq_storm_rise": {
+      "files": [
+        "episode4/storm_rise.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.26,
+      "pitch": 0.015
+    },
+    "sq_storm_roar": {
+      "files": [
+        "episode4/storm_roar.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.26,
+      "pitch": 0.015
+    },
+    "sq_crown_chime": {
+      "files": [
+        "episode4/crown_chime.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.26,
+      "pitch": 0.015
+    },
+    "sq_crown_seal": {
+      "files": [
+        "episode4/crown_seal.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.26,
+      "pitch": 0.015
+    },
+    "sq_prism_tune": {
+      "files": [
+        "episode4/prism_tune.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.26,
+      "pitch": 0.015
+    },
+    "sq_prism_fire": {
+      "files": [
+        "episode4/prism_fire.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.26,
+      "pitch": 0.015
+    },
+    "wa_scythe_draw": {
+      "files": [
+        "episode6/scythe_draw.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.4,
+      "pitch": 0.015
+    },
+    "wa_scythe_cut": {
+      "files": [
+        "episode6/scythe_cut.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.4,
+      "pitch": 0.015
+    },
+    "wa_lances_form": {
+      "files": [
+        "episode6/lances_form.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.4,
+      "pitch": 0.015
+    },
+    "wa_lances_launch": {
+      "files": [
+        "episode6/lances_launch.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.4,
+      "pitch": 0.015
+    },
+    "wa_requiem_breath": {
+      "files": [
+        "episode6/requiem_breath.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.4,
+      "pitch": 0.015
+    },
+    "wa_requiem_bell": {
+      "files": [
+        "episode6/requiem_bell.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.4,
+      "pitch": 0.015
+    },
+    "wa_procession_steps": {
+      "files": [
+        "episode6/procession_steps.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.4,
+      "pitch": 0.015
+    },
+    "wa_procession_march": {
+      "files": [
+        "episode6/procession_march.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.4,
+      "pitch": 0.015
+    },
+    "wa_whiteout_hush": {
+      "files": [
+        "episode6/whiteout_hush.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.4,
+      "pitch": 0.015
+    },
+    "wa_whiteout_burst": {
+      "files": [
+        "episode6/whiteout_burst.wav"
+      ],
+      "gain": 0.8,
+      "wet": 0.4,
+      "pitch": 0.015
     }
   },
   "amb": {

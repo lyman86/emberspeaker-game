@@ -81,7 +81,9 @@ export class Actor {
     let d = this.facing - this.root.rotation.y;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     this.root.rotation.y += d * Math.min(1, dt * turnRate);
+    this.resetSecondaryMotion?.();
     this.mixer.update(dt);
+    this.secondaryMotion?.(dt);
     if (this.flashT > 0 || this.tint || this._dirty) {
       this.flashT = Math.max(0, this.flashT - dt * 5);
       for (const m of this.mats) {

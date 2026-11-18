@@ -1,3 +1,4 @@
+import {BOSS_SOUNDS} from '../src/game/boss-sounds.js';
 import assert from 'node:assert/strict';
 import * as T from 'three';
 import {WinterCampaign} from '../src/game/winter-campaign.js';
@@ -96,3 +97,5 @@ for(const [id,targets,gate]of [['frostpass',['fire_outpost','fire_ravine','fire_
  for(const name of targets){const t=lv.def.triggers.find(t=>t.id===name),at=lv.center(t.x,t.z),path=lv.findPath(start.x,start.z,at.x,at.z);assert(path.length,name+' approach path');assert(path.at(-1)&&Math.hypot(path.at(-1).x-at.x,path.at(-1).z-at.z)<t.r,name+' inside interaction radius');}
  const locked=lv.gates[gate];assert(lv.solid(locked.x,locked.z));lv.openGate(gate);for(let i=0;i<70;i++)lv.update(.025);assert(!lv.solid(locked.x,locked.z));lv.dispose();
 }
+
+for(const [phase,index,kind] of [[1,0,'cleave'],[1,1,'lances'],[1,2,'requiem'],[2,0,'procession'],[2,2,'whiteout']]){const f=fixture(phase,index),sounds=[];f.g.audio.play=name=>sounds.push(name);f.step(.025);const cue=BOSS_SOUNDS[f.e.type][kind],c=f.e.winter.cast;assert(sounds.includes(cue[0]),kind+' warning');assert(!sounds.includes(cue[1]));f.step(c.windup-.05);assert(!sounds.includes(cue[1]),kind+' no early release');f.step(.1);assert.equal(sounds.filter(n=>n===cue[1]).length,1,kind+' release once');f.step(.05);assert.equal(sounds.filter(n=>n===cue[1]).length,1);f.clear();}

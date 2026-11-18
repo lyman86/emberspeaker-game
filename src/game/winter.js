@@ -1,3 +1,4 @@
+import {bossSound} from './boss-sounds.js';
 import * as T from 'three';
 import {bossAttack} from './combat.js';
 import {inLane,inSector} from './stag.js';
@@ -16,13 +17,13 @@ function start(e,kind){
  else if(kind==='procession'){c.lanes=Array.from({length:6},(_,i)=>{const a=Math.atan2(dir.x,dir.z)+i*Math.PI/3;return {origin,dir:V(Math.sin(a),Math.cos(a)),length:c.length};});for(const l of c.lanes)warn({kind:'charge',...l,width:c.width});}
  else if(kind==='whiteout'){c.safeRadius=5.5;c.refuges=[-10,10].map(x=>{const p=g.level.nearestFree(e.home.x+x,e.home.z+9,1);return p?V(p.x,p.z):origin.clone().add(V(x,9));});warn({kind:'disc',origin,radius:30,holes:c.refuges.map(p=>({x:p.x-origin.x,z:p.z-origin.z,r:c.safeRadius}))});e.intent='白夜葬雪 · 落雪前进入暖金避风圈';}
  else{warn({kind:kind==='charge'?'charge':kind==='cleave'?'cleave':'disc',origin,dir,radius:c.radius,angle:Math.PI*.9,width:c.width,length:c.length,holes:kind==='requiem'?[{r:c.inner}]:[]});if(kind==='requiem')g.fx.glyph(origin,{tex:'magic2',color:[1.3,.9,.4],r:c.inner,dur:c.windup+c.active,spin:0});}
- s.cast=c;s.poise=0;e.facing=Math.atan2(dir.x,dir.z);e.playTimed?.(kind==='cleave'||kind==='charge'?'attack':'Spellcast_Raise',c.windup,{restart:true});winterCastFx(g,e,c);g.audio.play(kind==='requiem'||kind==='whiteout'?'w_chant':'w_ice',origin,.65);
+ s.cast=c;s.poise=0;e.facing=Math.atan2(dir.x,dir.z);e.playTimed?.(kind==='cleave'||kind==='charge'?'attack':'Spellcast_Raise',c.windup,{restart:true});winterCastFx(g,e,c);bossSound(e,kind,false,kind==='requiem'||kind==='whiteout'?'w_chant':'w_ice');
  e.intent={cleave:'冰棺挥镰 · 绕至侧后',lances:'三重冰枪 · 离开红色直线',requiem:'安魂曲 · 近身避外圈 / 控制打断',procession:'六芒送葬 · 站入冰枪之间',whiteout:'白夜葬雪 · 进入暖金避风圈',charge:'霜足冲撞 · 横移离开直线'}[kind];
 }
 function chief(e,dt){
  const g=e.game;if(e.asleep||g.cinematic||!g.player.alive)return true;const s=e.winter??={phase:1,index:0,rest:1.3,exposed:0,poise:0};s.exposed=Math.max(0,s.exposed-dt);const phase=e.type==='winterabbess'?(e.hp/e.maxHp>.65?1:e.hp/e.maxHp>.3?2:3):1;
  if(phase>s.phase){s.phase=phase;g.ui.toast(phase===2?'唱诗厅结霜 · 六芒送葬与白夜葬雪':'冬死誓约 · 暴雪加剧');g.audio.play('w_chant',e.pos,.8);iceBurst(g,e.pos,5);const alive=g.enemies.filter(a=>a.alive&&a.tag==='summon').length;for(let i=alive;i<2;i++){const p=g.level.nearestFree(e.home.x+(i?9:-9),e.home.z+8,.8);if(p)g.spawnEnemy('frostthrall',p.x,p.z,{tag:'summon',level:e.level});}}e.phase=s.phase;
- const c=s.cast;if(c){c.t+=dt;if(c.t<c.windup)return true;const t=c.t-c.windup;if(!c.fired){c.fired=true;c.warnings.forEach(w=>w.stop());g.audio.play('w_crack',c.origin,.8);g.gfx.addShake(.25);if(['cleave','charge'].includes(c.kind))iceBurst(g,c.origin.clone().addScaledVector(c.dir,4),c.radius*.7);if(c.kind==='charge'){const end=g.level.displacement(e.pos,c.origin.clone().addScaledVector(c.dir,c.length),e.radius);e.pos.copy(end);}}
+ const c=s.cast;if(c){c.t+=dt;if(c.t<c.windup)return true;const t=c.t-c.windup;if(!c.fired){c.fired=true;c.warnings.forEach(w=>w.stop());bossSound(e,c.kind,true,'w_crack');g.gfx.addShake(.25);if(['cleave','charge'].includes(c.kind))iceBurst(g,c.origin.clone().addScaledVector(c.dir,4),c.radius*.7);if(c.kind==='charge'){const end=g.level.displacement(e.pos,c.origin.clone().addScaledVector(c.dir,c.length),e.radius);e.pos.copy(end);}}
   if(t<=c.active){if(['requiem','whiteout'].includes(c.kind)){c.tick-=dt;if(c.tick<=0){c.tick=.95;for(const a of targets(e)){const d=a.pos.distanceTo(c.origin),inside=c.kind==='requiem'?d>c.inner+a.radius&&d<c.radius+a.radius:d<30&&!c.refuges.some(p=>a.pos.distanceTo(p)<=c.safeRadius);if(inside)hit(e,a,70,'hazard',true);}}}
    else for(const a of targets(e))if(!c.hit.has(a)){const inside=c.kind==='cleave'?inSector(c.origin,c.dir,a.pos,c.radius+a.radius,Math.PI*.9):c.kind==='charge'?inLane(c.origin,c.dir,a.pos,c.length,c.width):c.lanes.some(l=>inLane(l.origin,l.dir,a.pos,l.length,c.width));if(inside){hit(e,a,e.type==='frostgiant'?130:170,'heavy',true);c.hit.add(a);}}}
   if(t>=c.active&&!c.recovering){c.recovering=true;s.exposed=Math.max(s.exposed,c.recover);e.intent='寒誓破绽 · 反击伤害 +25%';e.play('Idle_B');}if(t>=c.active+c.recover){s.cast=null;s.rest=s.phase===3?.65:1;}return true;

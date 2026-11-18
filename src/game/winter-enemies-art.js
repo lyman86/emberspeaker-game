@@ -1,3 +1,4 @@
+import {dressBossMotion} from './boss-motion.js';
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 const V=(x=0,y=0,z=0)=>new T.Vector3(x,y,z),UP=V(0,1,0),TAU=Math.PI*2;
@@ -5,7 +6,7 @@ const V=(x=0,y=0,z=0)=>new T.Vector3(x,y,z),UP=V(0,1,0),TAU=Math.PI*2;
 /** Bind-pose tailoring follows the Mixamo joints; no scene-global materials are mutated. */
 export function dressWinterEnemy(e){
  if(e.type==='snowyeti'){dressSnowBeast(e);return;}
- if(e.type==='winterabbess'){e.winterArtUpdate=()=>{};e.winterArtDispose=()=>{};return;}
+ if(e.type==='winterabbess'){e.winterArtUpdate=()=>{};e.winterArtDispose=dressBossMotion(e);return;}
  if(e.type==='frostgiant'){dressFrostCreature(e);return;}
  const file=({frostthrall:'warrior',snowraider:'bram',icemaiden:'vera',frostmonk:'mage',frostgiant:'elite',winterabbess:'vera',frostseal:'mage'})[e.type];
  const source=e.game.assets?.gltf?.get('mx:'+file)?.scene,ownedGeo=new Set(),ownedMat=new Set(),attachments=[];

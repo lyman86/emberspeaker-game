@@ -1,3 +1,4 @@
+import {SALT_BOSS_SOUNDS,ABBESS_SOUNDS} from '../game/boss-sounds.js';
 /**
  * Sound: recorded files listed in public/audio/manifest.json are used when present
  * (several variants per effect, picked at random with slight pitch variation); anything
@@ -5,7 +6,7 @@
  * Ambience loops (amb_*) and music tracks (mus_*) from the manifest replace the
  * synthesized wind and generative score.
  */
-const WINTER_SOUNDS=['w_wind','w_ice','w_crack','w_chant','w_yeti','w_snow'];
+const WINTER_SOUNDS=['w_wind','w_ice','w_crack','w_chant','w_yeti','w_snow',...ABBESS_SOUNDS];
 const HARBOR_SOUNDS=['h_surge','h_chain','h_lure','h_plank','h_roar','h_impact','h_doom'];
 const NOTE = (n) => 440 * Math.pow(2, (n - 69) / 12);
 
@@ -75,6 +76,7 @@ export class GameAudio {
     if(!this.pending.has(key))this.pending.set(key,(async()=>{
       try {
         const bufs=await Promise.all(e.files.map(f=>this._file(f)));
+        if(SALT_BOSS_SOUNDS.includes(name)&&this.episode!==4)return;
         if(HARBOR_SOUNDS.includes(name)&&this.episode!==5||WINTER_SOUNDS.includes(name)&&this.episode!==6)return;
         if(!name.startsWith('e_')||!['e_villager','e_goblin','e_wolf','e_witch','e_butcher','e_poison','e_roots'].includes(name)||this.episode===2)
           this.overrides[name]={bufs,gain:e.gain??1,wet:e.wet??.2,pitch:e.pitch??.06};
@@ -105,10 +107,11 @@ export class GameAudio {
   async prepare(mood,episode) {
     this.episode=episode;this.setMood(mood);
     const plague=['e_villager','e_goblin','e_wolf','e_witch','e_butcher','e_poison','e_roots'];
+    if(episode!==4)for(const name of SALT_BOSS_SOUNDS)delete this.overrides[name];
     if(episode!==6)for(const name of WINTER_SOUNDS)delete this.overrides[name];
     if(episode!==5)for(const name of HARBOR_SOUNDS)delete this.overrides[name];
     if(episode!==2)for(const name of plague)delete this.overrides[name];
-    await Promise.all([this.loadMood(),...['hit','hurt','swing','coin','potion','pickup',...(episode===2?plague:[]),...(episode===5?HARBOR_SOUNDS:[]),...(episode===6?WINTER_SOUNDS:[])].map(name=>this.loadSound(name))]);
+    await Promise.all([this.loadMood(),...['hit','hurt','swing','coin','potion','pickup',...(episode===4?SALT_BOSS_SOUNDS:[]),...(episode===2?plague:[]),...(episode===5?HARBOR_SOUNDS:[]),...(episode===6?WINTER_SOUNDS:[])].map(name=>this.loadSound(name))]);
   }
 
   /** Start / cross-fade the recorded ambience and music for the current mood. */

@@ -34,3 +34,7 @@ Modifications: retained the complete body and native skeleton/Idle/Giant Run/Pun
 Each GLB embeds its own textures and actions. Menus do not request these three models. Salt Queen loads in the salt tomb; snow beasts in the mountain pass; Winter Abbess in the monastery. Shared geometry/textures are released by the existing map resource owner, not by character costumes. Existing save keys, difficulty, loot and progression are unchanged by these replacements.
 
 Processing: tools/prepare-redesign-models.mjs, tools/normalize-yeti.mjs, tools/build-boss-models.py, tools/pack-boss-redesign.mjs. Original downloads are in the local raw/character-redesign directory, excluded from the deployed runtime.
+
+2026-11-18 revision: added segmented hair/veil/robe skin joints, rebuilt knee/ankle gait and asymmetrical casts, narrowed the Queen's side hair silhouette, recolored her base-color maps to aged salt/ivory, replaced the Abbess's white shoulder bib with dark curved drapery, and added original forged crown/reliquary meshes. Runtime damped secondary motion responds to turns and displacement; it is constrained to small angles and does not change collision or attack footprints. Source authors and licenses remain as credited above.
+
+修正女王原 GLB 身体/头发使用 BLEND 导致的透明排序错误，改为保留镂空边缘的 alpha mask，并保持深度写入；浏览器近景验证面部不再被后方发片盖住。
